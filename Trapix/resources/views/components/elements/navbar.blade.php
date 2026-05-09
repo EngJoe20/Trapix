@@ -1,9 +1,10 @@
 @php
     $navItems = [
-        ['href' => '#', 'text' => 'Home'],
-        ['href' => '#features', 'text' => 'Features'],
-        ['href' => '#scanner', 'text' => 'Scanner'],
-        ['href' => '#how-it-works', 'text' => 'How It Works'],
+        ['href' => route('home'), 'text' => 'Home'],
+        ['href' => route('home') . '#features', 'text' => 'Features'],
+        ['href' => route('analyze'), 'text' => 'Scanner'],
+        ['href' => route('docs'), 'text' => 'Docs'],
+        ['href' => route('home') . '#pricing', 'text' => 'Pricing'],
     ];
 @endphp
 

@@ -36,53 +36,138 @@
         </div>
 
         <!-- Main Scanner Panel -->
-        <div class="glass-panel p-8 md:p-12 neon-glow mb-12 fade-in-up stagger-delay-2 relative overflow-hidden">
-
-            <!-- Scan line animation (active during scan) -->
-            <div id="scanLine" class="scan-line hidden absolute inset-0 pointer-events-none"></div>
-
-            <!-- Corner brackets -->
-            <div class="corner-bracket corner-bracket--tl"></div>
-            <div class="corner-bracket corner-bracket--tr"></div>
-            <div class="corner-bracket corner-bracket--bl"></div>
-            <div class="corner-bracket corner-bracket--br"></div>
-
-            <!-- File Upload Area -->
-            <div id="dropZone"
-                 class="scanner-zone cursor-pointer transition-all duration-300"
-                 style="min-height: 220px;">
-
-                <!-- Upload Icon -->
-                <svg class="scanner-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-
-                <!-- Upload Text -->
-                <h3 class="text-2xl font-bold text-heading-1 mb-2">
-                    <span class="text-primary dark:text-cyan-400">Drop file</span> to scan
-                </h3>
-                <p class="text-body mb-6">or click to browse • Supports EXE, PDF, DOC, ZIP (max 100MB)</p>
-
-                <!-- Hidden file input -->
-                <input type="file" id="fileInput" class="hidden" multiple>
-
-                <!-- Scanning Progress (initially hidden) -->
-                <div id="scanProgress" class="hidden max-w-md mx-auto">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-cyan-400 font-mono" id="scanStatus">Initializing scan...</span>
-                        <span class="text-sm text-cyan-400 font-mono" id="scanPercent">0%</span>
+        <div class="grid lg:grid-cols-12 gap-8 mb-12 fade-in-up stagger-delay-2" x-data="scannerApp()">
+            
+            <!-- Left Panel: Upload & GUI Tools -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- Upload Dropzone -->
+                <div class="glass-panel p-8 relative overflow-hidden group" 
+                     id="dropZone"
+                     @dragover.prevent="dragover = true"
+                     @dragleave.prevent="dragover = false"
+                     @drop.prevent="handleDrop($event)"
+                     :class="{ 'border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]': dragover }">
+                     
+                    <input type="file" id="fileInput" class="hidden" multiple @change="handleFileSelect($event)">
+                    
+                    <!-- Dropzone Default -->
+                    <div class="text-center cursor-pointer" @click="document.getElementById('fileInput').click()" x-show="!selectedFile && !isUploading && !isCompleted">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-primary/30 flex items-center justify-center group-hover:border-primary transition-colors">
+                            <svg class="w-8 h-8 text-primary dark:text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-heading-1 mb-2">Upload File or Folder</h3>
+                        <p class="text-body text-sm">Drag & drop or click to browse (Max 100MB)</p>
                     </div>
-                    <div class="scan-progress h-2 rounded-full overflow-hidden bg-gray-800">
-                        <div id="progressBar" class="scan-progress-bar h-full rounded-full" style="width: 0%"></div>
+
+                    <!-- File Selected UI (New) -->
+                    <div x-show="selectedFile && !isUploading && !isCompleted" style="display: none;" class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.1)]">
+                            <svg class="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-heading-1 mb-1 truncate px-4" x-text="selectedFile ? selectedFile.name : ''"></h3>
+                        <p class="text-body text-xs mb-6" x-text="selectedFile ? (selectedFile.size/1024/1024).toFixed(2) + ' MB' : ''"></p>
+                        
+                        <div class="flex flex-col gap-3 max-w-[200px] mx-auto">
+                            <button @click="startUpload" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2 group">
+                                <span>START ANALYSIS</span>
+                                <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            </button>
+                            <button @click="resetScan(true)" class="text-xs text-body hover:text-red-400 transition-colors uppercase tracking-wider font-semibold">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- Progress UI -->
+                    <div x-show="isUploading" style="display: none;" class="text-center">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-cyan-400 font-mono" x-text="scanStatusText">Uploading...</span>
+                            <span class="text-sm text-cyan-400 font-mono" x-text="progress + '%'">0%</span>
+                        </div>
+                        <div class="h-2 rounded-full overflow-hidden bg-gray-800 w-full mb-4">
+                            <div class="h-full rounded-full bg-cyan-400 transition-all duration-300" :style="'width: ' + progress + '%'"></div>
+                        </div>
+                        <p class="text-xs text-body font-mono">Job ID: <span x-text="jobId" class="text-emerald-400"></span></p>
+                    </div>
+
+                    <!-- Completed UI -->
+                    <div x-show="isCompleted" style="display: none;" class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-emerald-400 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-emerald-400 mb-2">Analysis Complete</h3>
+                        <div class="flex justify-center gap-4 mt-4">
+                            <a :href="pdfUrl" x-show="hasPdf" class="btn-primary text-sm px-4 py-2" target="_blank">Download PDF</a>
+                            <button @click="resetScan(true)" class="btn-secondary text-sm px-4 py-2">Scan Another</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Terminal Output (during scan) -->
-                <div id="terminalOutput" class="terminal-output hidden max-w-2xl mx-auto text-left font-mono text-xs">
-                    <!-- Dynamic terminal lines will be inserted here -->
+                <!-- GUI Tool Selection -->
+                <div class="glass-card p-6 relative">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-box-border">
+                        <h3 class="text-lg font-bold text-heading-2">Analysis Tools</h3>
+                        <button @click="selectAllTools" class="text-xs text-cyan-400 hover:text-cyan-300">Select All</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <template x-for="(tool, key) in tools" :key="key">
+                            <label class="flex items-start gap-3 p-3 rounded-lg border border-box-border hover:border-cyan-500/50 cursor-pointer transition-colors"
+                                   :class="{ 'bg-cyan-500/10 border-cyan-500/50': tool.enabled }">
+                                <input type="checkbox" x-model="tool.enabled" class="mt-1 bg-transparent border-gray-500 text-cyan-500 focus:ring-cyan-500 rounded">
+                                <div>
+                                    <span class="text-sm font-semibold text-heading-3 block" x-text="tool.name"></span>
+                                    <span class="text-xs text-body/70 block" x-text="tool.desc"></span>
+                                </div>
+                            </label>
+                        </template>
+                    </div>
                 </div>
 
+            </div>
+
+            <!-- Right Panel: Terminal Command Mode -->
+            <div class="lg:col-span-7 h-full flex flex-col">
+                <div class="glass-card flex-grow relative overflow-hidden flex flex-col h-[550px]">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-purple-500"></div>
+                    
+                    <!-- Terminal Header -->
+                    <div class="flex items-center gap-2 p-4 border-b border-box-border bg-black/40">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-xs text-heading-3 font-mono">TRAPIX_TERMINAL v1.0</span>
+                    </div>
+
+                    <!-- Terminal Output -->
+                    <div class="flex-grow p-4 font-mono text-[12px] overflow-y-auto" id="terminalLog">
+                        <div class="text-gray-400 mb-4">
+                            Welcome to Trapix Command Mode. <br>
+                            Type 'help' for a list of commands, or upload a file to begin.<br>
+                            Example: <span class="text-cyan-400">Trapix getHash -sha256</span>
+                        </div>
+                        
+                        <template x-for="(log, index) in logs" :key="index">
+                            <div class="terminal-line mb-1" :class="log.color">
+                                <span x-html="log.prefix" class="mr-2"></span><span x-text="log.text"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Terminal Input -->
+                    <div class="p-4 border-t border-box-border bg-black/40 flex items-center gap-2">
+                        <span class="text-cyan-400 font-mono text-[12px] opacity-70">$&gt;</span>
+                        <input type="text" x-model="commandInput" @keydown.enter="executeCommand" 
+                               class="w-full bg-transparent border-none outline-none text-heading-2 font-mono text-[12px] focus:ring-0 p-0"
+                               placeholder="Enter command (e.g., Trapix run static)..."
+                               :disabled="isUploading && !isCompleted">
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -396,114 +481,405 @@
     </div>
 </section>
 
+<!-- Pricing Section -->
+<section id="pricing" class="relative py-20 px-6 overflow-hidden bg-bg/50">
+    <div class="max-w-7xl mx-auto relative z-10">
+        
+        <div class="text-center mb-16 fade-in-up">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                <span class="text-heading-1">Choose Your</span>
+                <span class="text-primary dark:text-cyan-400 neon-text">Arsenal</span>
+            </h2>
+            <p class="text-body max-w-2xl mx-auto">
+                Transparent pricing for security professionals and enterprises. Scale your threat hunting with Trapix.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            
+            <!-- Free Plan -->
+            <div class="glass-card p-8 relative flex flex-col fade-in-up stagger-delay-1 border border-box-border hover:border-gray-500 transition-colors">
+                <div class="mb-8">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-500/20 text-gray-400 mb-4 inline-block">GUEST / FREE</span>
+                    <h3 class="text-3xl font-bold text-heading-1 mb-2">$0 <span class="text-sm font-normal text-body">/ month</span></h3>
+                    <p class="text-body text-sm">Perfect for occasional analysis</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8 flex-grow">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">10 analyses / month</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Max upload: 10 MB</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Static & Dynamic Analysis</span>
+                    </li>
+                    <li class="flex items-start gap-3 opacity-50">
+                        <svg class="w-5 h-5 text-red-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span class="text-sm text-body-contrast">No AI Expert System</span>
+                    </li>
+                </ul>
+                
+                <a href="{{ route('register') }}" class="btn-secondary w-full text-center py-3">Get Started</a>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="glass-card p-8 relative flex flex-col fade-in-up stagger-delay-2 border-2 border-cyan-500 shadow-[0_0_30px_rgba(34,211,238,0.2)] transform md:-translate-y-4">
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <span class="px-4 py-1 text-xs font-bold rounded-full bg-cyan-500 text-white shadow-lg">MOST POPULAR</span>
+                </div>
+                
+                <div class="mb-8">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/20 text-cyan-400 mb-4 inline-block">PROFESSIONAL</span>
+                    <h3 class="text-3xl font-bold text-heading-1 mb-2">$49 <span class="text-sm font-normal text-body">/ month</span></h3>
+                    <p class="text-body text-sm">For independent researchers and SOC analysts</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8 flex-grow">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-cyan-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">200 analyses / month</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-cyan-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Max upload: 100 MB</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-cyan-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">AI Expert System Integration</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-cyan-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Unlimited PDF Downloads</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-cyan-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Priority Queue Processing</span>
+                    </li>
+                </ul>
+                
+                <button class="btn-primary w-full text-center py-3">Upgrade to Pro</button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="glass-card p-8 relative flex flex-col fade-in-up stagger-delay-3 border border-box-border hover:border-purple-500 transition-colors">
+                <div class="mb-8">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-400 mb-4 inline-block">ENTERPRISE</span>
+                    <h3 class="text-3xl font-bold text-heading-1 mb-2">Custom</h3>
+                    <p class="text-body text-sm">For high-volume teams and MSSPs</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8 flex-grow">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Unlimited analyses</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Max upload: 500 MB</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">API Access & Webhooks</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Custom AI Tuning</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span class="text-sm text-body-contrast">Dedicated Account Manager</span>
+                    </li>
+                </ul>
+                
+                <button class="btn-secondary w-full text-center py-3 border-purple-500/50 hover:bg-purple-500/10 text-purple-400">Contact Sales</button>
+            </div>
+
+        </div>
+    </div>
+</section>
+
 @endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const scanProgress = document.getElementById('scanProgress');
-    const progressBar = document.getElementById('progressBar');
-    const scanStatus = document.getElementById('scanStatus');
-    const scanPercent = document.getElementById('scanPercent');
-    const terminalOutput = document.getElementById('terminalOutput');
-    const scanLine = document.getElementById('scanLine');
+document.addEventListener('alpine:init', () => {
+    Alpine.data('scannerApp', () => ({
+        dragover: false,
+        isUploading: false,
+        isCompleted: false,
+        progress: 0,
+        jobId: null,
+        pollUrl: null,
+        scanStatusText: 'Ready',
+        hasPdf: false,
+        pdfUrl: '#',
+        selectedFile: null,
+        quota: null,
 
-    // Click to upload
-    dropZone.addEventListener('click', () => fileInput.click());
+        init() {
+            this.fetchQuota();
+            this.addLog('System', 'Welcome to Trapix Command Mode.', 'text-cyan-400');
+            this.addLog('System', 'Type "help" for a list of commands, or upload a file to begin.', 'text-gray-400');
+        },
 
-    fileInput.addEventListener('change', handleFiles);
-
-    // Drag & drop
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length) {
-            startScan(files[0]);
-        }
-    });
-
-    function handleFiles(e) {
-        const file = e.target.files[0];
-        if (file) {
-            startScan(file);
-        }
-    }
-
-    function startScan(file) {
-        // Show progress UI
-        dropZone.querySelector('.scanner-icon').classList.add('hidden');
-        dropZone.querySelector('h3').classList.add('hidden');
-        dropZone.querySelector('p').classList.add('hidden');
-        scanProgress.classList.remove('hidden');
-        scanLine.classList.remove('hidden');
-        terminalOutput.classList.remove('hidden');
-        terminalOutput.innerHTML = '';
-
-        const messages = [
-            { text: `$ trapix scan --file="${file.name}"`, color: 'text-cyan-400', delay: 0 },
-            { text: `[→] File size: ${(file.size / 1024).toFixed(2)} KB`, color: 'text-gray-400', delay: 500 },
-            { text: `[→] Calculating SHA-256 hash...`, color: 'text-cyan-400', delay: 1000 },
-            { text: `[OK] Hash: ${generateFakeHash()}`, color: 'text-emerald-400', delay: 1500 },
-            { text: `[→] Uploading to sandbox...`, color: 'text-cyan-400', delay: 2000 },
-            { text: `[→] Extracting embedded resources...`, color: 'text-cyan-400', delay: 2800 },
-            { text: `[OK] 3 resources found`, color: 'text-emerald-400', delay: 3500 },
-            { text: `[→] Running static signature scan...`, color: 'text-cyan-400', delay: 4200 },
-            { text: `[OK] 0 known malware signatures`, color: 'text-emerald-400', delay: 5000 },
-            { text: `[→] Monitoring runtime behavior...`, color: 'text-cyan-400', delay: 5800 },
-            { text: `[INFO] API calls monitored: 142`, color: 'text-gray-400', delay: 6500 },
-            { text: `[WARN] Detected unusual registry access`, color: 'text-amber-400', delay: 7200 },
-            { text: `[→] AI model evaluating threat level...`, color: 'text-purple-400', delay: 8000 },
-            { text: `[AI] Risk assessment: LOW (12/100)`, color: 'text-emerald-400 font-bold', delay: 8800 },
-            { text: `[OK] Scan complete. Generating report...`, color: 'text-emerald-400', delay: 9500 },
-        ];
-
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-            progress += 1;
-            progressBar.style.width = `${progress}%`;
-            scanPercent.textContent = `${progress}%`;
-
-            if (progress >= 100) {
-                clearInterval(progressInterval);
-                setTimeout(() => {
-                    scanStatus.textContent = 'Scan Complete';
-                    scanStatus.className = 'text-sm text-emerald-400 font-mono';
-                }, 500);
+        async fetchQuota() {
+            try {
+                const res = await fetch('/api/dashboard/quota');
+                if (res.ok) {
+                    this.quota = await res.json();
+                    if (this.quota.type === 'guest') {
+                        this.addLog('Info', `Guest Token: ${this.quota.used}/${this.quota.limit} analyses used.`, 'text-blue-300');
+                    } else {
+                        this.addLog('Info', `Quota: ${this.quota.used}/${this.quota.limit} (${this.quota.plan_name} Plan)`, 'text-blue-300');
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch quota', e);
             }
-        }, 95); // ~9.5 seconds total
+        },
+        
+        tools: {
+            hash: { name: 'Hash Analysis', desc: 'SHA256, MD5 extraction', enabled: true },
+            static: { name: 'Static Analysis', desc: 'PE Headers, Strings', enabled: true },
+            meta: { name: 'Metadata', desc: 'Exif & File info', enabled: true },
+            sig: { name: 'Signature', desc: 'Known malware signatures', enabled: true },
+            ioc: { name: 'IOC Extraction', desc: 'IPs, URLs, Emails', enabled: true },
+            python: { name: 'Custom Scripts', desc: 'Run custom Python modules', enabled: false },
+            ai: { name: 'AI Expert System', desc: 'Machine Learning risk scoring', enabled: false },
+        },
+        
+        logs: [],
+        
+        selectAllTools() {
+            for (let key in this.tools) {
+                this.tools[key].enabled = true;
+            }
+            this.addLog('System', 'All analysis tools enabled.', 'text-emerald-400');
+        },
+        
+        addLog(type, text, color = 'text-body-contrast') {
+            const prefixes = {
+                'Command': '<span class="text-cyan-400">$</span>',
+                'System': '<span class="text-gray-400">[SYS]</span>',
+                'Info': '<span class="text-blue-400">[INFO]</span>',
+                'Success': '<span class="text-emerald-400">[OK]</span>',
+                'Warn': '<span class="text-amber-400">[WARN]</span>',
+                'Error': '<span class="text-red-400">[ERR]</span>',
+                'AI': '<span class="text-purple-400">[AI]</span>',
+            };
+            this.logs.push({ prefix: prefixes[type] || '', text, color });
+            
+            this.$nextTick(() => {
+                const term = document.getElementById('terminalLog');
+                if (term) term.scrollTop = term.scrollHeight;
+            });
+        },
+        
+        executeCommand() {
+            if (!this.commandInput.trim()) return;
+            
+            const cmd = this.commandInput.trim();
+            this.addLog('Command', cmd, 'text-gray-300');
+            this.commandInput = '';
+            
+            const parts = cmd.split(' ');
+            
+            if (parts[0].toLowerCase() === 'help') {
+                this.addLog('System', 'Available commands:', 'text-gray-400');
+                this.addLog('System', '  Trapix analyze all   - Run all enabled tools on uploaded file', 'text-gray-400');
+                this.addLog('System', '  Trapix run <tool>    - Run specific tool (static, ioc, meta)', 'text-gray-400');
+                this.addLog('System', '  Trapix getHash -sha256 - Calculate Hash on uploaded file', 'text-gray-400');
+                this.addLog('System', '  clear                - Clear terminal', 'text-gray-400');
+                return;
+            }
+            
+            if (cmd.toLowerCase() === 'clear') {
+                this.logs = [];
+                return;
+            }
+            
+            if (parts[0].toLowerCase() === 'trapix') {
+                if (!this.selectedFile) {
+                    this.addLog('Error', 'No file uploaded. Please upload a file first.', 'text-red-400');
+                    return;
+                }
+                
+                if (parts[1] === 'analyze' && parts[2] === 'all') {
+                    this.startUpload();
+                } else if (parts[1] === 'run') {
+                    this.addLog('System', `Simulating run of module: ${parts[2]}...`, 'text-cyan-400');
+                    this.startUpload();
+                } else if (parts[1].toLowerCase() === 'gethash') {
+                    this.addLog('System', `Calculating hash ${parts[2] || ''} for ${this.selectedFile.name}...`, 'text-cyan-400');
+                    this.startUpload();
+                } else {
+                    this.addLog('Error', 'Unknown Trapix command syntax.', 'text-red-400');
+                }
+                return;
+            }
+            
+            this.addLog('Error', `Command not found: ${parts[0]}`, 'text-red-400');
+        },
+        
+        handleDrop(e) {
+            this.dragover = false;
+            if (e.dataTransfer.files.length > 0) {
+                this.selectedFile = e.dataTransfer.files[0];
+                const size = this.selectedFile ? (this.selectedFile.size/1024).toFixed(2) : '0';
+                this.addLog('Info', `File selected: ${this.selectedFile.name} (${size} KB)`);
+            }
+        },
+        
+        handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                this.selectedFile = e.target.files[0];
+                const size = this.selectedFile ? (this.selectedFile.size/1024).toFixed(2) : '0';
+                this.addLog('Info', `File selected: ${this.selectedFile.name} (${size} KB)`);
+            }
+        },
+        
+        async startUpload() {
+            if (!this.selectedFile) return;
+            
+            this.isUploading = true;
+            this.isCompleted = false;
+            this.progress = 10;
+            this.scanStatusText = 'Initializing upload...';
+            this.addLog('System', 'Initializing API upload request...', 'text-cyan-400');
+            
+            // Build options from tools
+            let selectedToolKeys = Object.keys(this.tools).filter(k => this.tools[k].enabled);
+            let skipVt = !this.tools['sig'].enabled; // If signature disabled, skip VT
+            
+            const formData = new FormData();
+            formData.append('files[]', this.selectedFile);
+            formData.append('skip_vt', skipVt ? 1 : 0);
+            formData.append('options', JSON.stringify({ tools: selectedToolKeys }));
+            
+            try {
+                this.scanStatusText = 'Uploading...';
+                this.addLog('System', 'Uploading file to secure sandbox...', 'text-cyan-400');
+                
+                const response = await fetch('/api/analysis', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
 
-        // Add terminal lines with typing effect
-        messages.forEach((msg) => {
-            setTimeout(() => {
-                const line = document.createElement('span');
-                line.className = `terminal-line block ${msg.color}`;
-                line.textContent = msg.text;
-                terminalOutput.appendChild(line);
-            }, msg.delay);
-        });
-    }
+                if (response.status === 429) {
+                    this.addLog('Error', `Quota Exceeded: ${data.error}`, 'text-red-400');
+                    if (data.upgrade) {
+                        this.addLog('Info', 'Please sign in or upgrade your plan to continue.', 'text-amber-400');
+                    }
+                    this.resetScan(false);
+                    return;
+                }
+                
+                if (!response.ok) {
+                    let errMsg = data.error || data.message || 'Unknown server error';
+                    this.addLog('Error', `Upload Failed [${response.status}]: ${errMsg}`, 'text-red-400');
+                    console.error('Detailed Error:', data);
+                    this.resetScan(false);
+                    return;
+                }
+                
+                this.jobId = data.job_id;
+                this.pollUrl = data.poll_url;
+                
+                this.progress = 30;
+                this.scanStatusText = 'Analysis running...';
+                this.addLog('Success', `Upload complete. Job ID: ${this.jobId}`, 'text-emerald-400');
+                this.addLog('Info', 'Dispatching tools to sandboxed environment...', 'text-cyan-400');
+                
+                // Start polling
+                this.pollStatus();
+                
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                this.addLog('Error', `Network Error: ${error.message}. See console for details.`, 'text-red-400');
+                this.resetScan(false);
+            }
+        },
+        
+        async pollStatus() {
+            if(!this.isUploading) return;
 
-    function generateFakeHash() {
-        const chars = '0123456789abcdef';
-        let hash = '';
-        for (let i = 0; i < 64; i++) {
-            hash += chars[Math.floor(Math.random() * chars.length)];
+            try {
+                const res = await fetch(this.pollUrl);
+                const data = await res.json();
+                
+                if (data.status === 'completed') {
+                    this.progress = 100;
+                    this.scanStatusText = 'Finalizing results...';
+                    this.addLog('Success', 'Analysis job marked as completed by worker.', 'text-emerald-400');
+                    this.fetchResults();
+                } else if (data.status === 'failed') {
+                    this.addLog('Error', 'Analysis job failed during processing.', 'text-red-400');
+                    this.resetScan(false);
+                } else {
+                    // simulate progress increase for visual effect
+                    if (this.progress < 90) this.progress += 5;
+                    this.addLog('Info', 'Analysis running... please wait.', 'text-gray-400');
+                    setTimeout(() => this.pollStatus(), 3000);
+                }
+            } catch (err) {
+                this.addLog('Error', 'Failed to poll status.', 'text-red-400');
+                setTimeout(() => this.pollStatus(), 5000);
+            }
+        },
+        
+        async fetchResults() {
+            try {
+                const res = await fetch(`/api/analysis/${this.jobId}/result`);
+                const data = await res.json();
+                
+                this.isUploading = false;
+                this.isCompleted = true;
+                this.hasPdf = data.has_pdf;
+                this.pdfUrl = data.pdf_url;
+                
+                this.addLog('System', 'Fetching result JSON...', 'text-cyan-400');
+                this.addLog('Info', `Risk Level: ${data.risk_level || 'UNKNOWN'}`, (data.risk_level === 'HIGH' || data.risk_level === 'CRITICAL') ? 'text-red-400' : 'text-emerald-400');
+                
+                if (this.tools['ai'].enabled) {
+                    this.addLog('AI', 'Expert system analysis generated actionable insights.', 'text-purple-400');
+                }
+                
+                this.addLog('Success', 'Process fully completed. PDF Report available.', 'text-emerald-400 font-bold');
+                
+                // Refresh quota after completion
+                await this.fetchQuota();
+                
+            } catch (err) {
+                this.addLog('Error', 'Failed to fetch final results.', 'text-red-400');
+            }
+        },
+        
+        resetScan(clearFile = true) {
+            this.isUploading = false;
+            this.isCompleted = false;
+            this.progress = 0;
+            this.jobId = null;
+            if (clearFile) {
+                this.selectedFile = null;
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput) fileInput.value = '';
+            }
         }
-        return hash;
-    }
+    }));
+});
 
+document.addEventListener('DOMContentLoaded', function() {
     // Intersection Observer for fade-in animations
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {

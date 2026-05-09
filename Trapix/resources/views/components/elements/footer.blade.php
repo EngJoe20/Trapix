@@ -1,29 +1,26 @@
 @php
     $footerNav1 = [
-        ['itemText' => 'Marketing', 'itemLink' => '#'],
-        ['itemText' => 'Analytics', 'itemLink' => '#'],
-        ['itemText' => 'Commerce', 'itemLink' => '#'],
-        ['itemText' => 'Insights', 'itemLink' => '#'],
+        ['itemText' => 'Scanner', 'itemLink' => route('analyze')],
+        ['itemText' => 'Analysis Engine', 'itemLink' => route('docs') . '#engine'],
+        ['itemText' => 'API Reference', 'itemLink' => route('docs') . '#api'],
+        ['itemText' => 'Security Insights', 'itemLink' => route('docs') . '#insights'],
     ];
-
     $footerSupport = [
-        ['itemText' => 'Pricing', 'itemLink' => '#'],
-        ['itemText' => 'Guides', 'itemLink' => '#'],
-        ['itemText' => 'FAQ', 'itemLink' => '#'],
-        ['itemText' => 'Contact', 'itemLink' => '#'],
+        ['itemText' => 'Pricing', 'itemLink' => route('pricing')],
+        ['itemText' => 'Documentation', 'itemLink' => route('docs')],
+        ['itemText' => 'FAQ', 'itemLink' => route('docs') . '#faq'],
+        ['itemText' => 'Contact Support', 'itemLink' => '#'],
     ];
-
     $footerCompany = [
-        ['itemText' => 'About', 'itemLink' => '/about'],
-        ['itemText' => 'Blog', 'itemLink' => '#'],
-        ['itemText' => 'Jobs', 'itemLink' => '#'],
-        ['itemText' => 'Partners', 'itemLink' => '#'],
+        ['itemText' => 'About Trapix', 'itemLink' => '#'],
+        ['itemText' => 'Our Mission', 'itemLink' => '#'],
+        ['itemText' => 'Security Blog', 'itemLink' => '#'],
+        ['itemText' => 'Careers', 'itemLink' => '#'],
     ];
-
     $footerLegal = [
-        ['itemText' => 'Claim', 'itemLink' => '/#'],
-        ['itemText' => 'Privacy', 'itemLink' => '#'],
-        ['itemText' => 'Terms', 'itemLink' => '#'],
+        ['itemText' => 'Privacy Policy', 'itemLink' => '#'],
+        ['itemText' => 'Terms of Service', 'itemLink' => '#'],
+        ['itemText' => 'Cookie Policy', 'itemLink' => '#'],
     ];
 @endphp
 
@@ -102,7 +99,7 @@
                         ];
                     @endphp
 
-                    <a href="https://github.com/johnkat-mj" target="_blank" class="w-10 h-10 rounded-lg bg-box-bg/50 border border-box-border flex items-center justify-center
+                    <a href="https://github.com/EngJoe20/Trapix" target="_blank" class="w-10 h-10 rounded-lg bg-box-bg/50 border border-box-border flex items-center justify-center
                               text-heading-3 hover:text-primary hover:border-primary/50 dark:hover:bg-cyan-900/30
                                transition-all duration-300 hover:scale-110">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -142,7 +139,7 @@
 
                 <div class="flex items-center gap-4">
                     <span>Proudly made by</span>
-                    <a href="https://github.com/johnkat-mj" target="_blank"
+                    <a href="https://github.com/EngJoe20/Trapix" target="_blank"
                         class="font-semibold text-primary dark:text-cyan-400 hover:text-primary/80 transition-colors">
                         Trapix team
                     </a>
