@@ -15,10 +15,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // ── Seed subscription plans first ──────────────────────────────────────
+        $this->call(PlanSeeder::class);
 
+        // ── Test user ──────────────────────────────────────────────────────────
         User::factory()->create([
-            'name' => 'Test User',
+            'name'  => 'Test User',
             'email' => 'test@example.com',
         ]);
     }
