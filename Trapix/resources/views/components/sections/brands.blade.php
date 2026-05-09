@@ -67,7 +67,7 @@
 
             @foreach ($brands as $brand)
 
-                <div class="p-4 sm:p-5 rounded-xl bg-body border border-box-border group">
+                <div class="p-4 sm:p-5 rounded-xl bg-bg border border-box-border group">
 
                     <img
                         src="{{ asset($brand['image']) }}"

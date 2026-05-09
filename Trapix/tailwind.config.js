@@ -11,6 +11,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Raleway', ...defaultTheme.fontFamily.sans],
+        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
       screens: {
         'midmd': '880px',
