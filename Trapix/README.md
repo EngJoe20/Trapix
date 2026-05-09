@@ -681,6 +681,11 @@ chmod -R 775 storage bootstrap/cache
 
 ## 19. Future Improvements
 
+- [x] Frontend Analyzer with GUI Tool Selection
+- [x] Command Terminal Mode integration
+- [x] Comprehensive Documentation Page
+- [x] Dashboard with Analysis History & Quotas
+- [x] AI Workflow Architecture preparation
 - [ ] AI-generated PDF narrative reports
 - [ ] Claude, Gemini, Ollama provider adapters
 - [ ] Stripe/Paddle billing integration
