@@ -143,6 +143,7 @@ class FileAnalyzer:
             logger.error(f"❌ Failed to calculate hashes: {e}")
 
         # ─── Stage 2: Query VirusTotal ───────────────────────────────
+        vt_result = None
         if not self.skip_vt and analysis["hashes"].get("sha256"):
             logger.info("🌐 [2/5] Querying VirusTotal...")
             vt_result = self.vt_client.query_hash(analysis["hashes"]["sha256"])
@@ -159,6 +160,9 @@ class FileAnalyzer:
             }
         else:
             logger.info("⏭️  [2/5] Skipping VirusTotal")
+            # Create a dummy clean result if skipping or not found
+            from core.vt_client import VTResult
+            vt_result = VTResult()
 
         # ─── Stage 3: Packer detection ──────────────────────────────────────────
         logger.info("🔍 [3/5] Packer and entropy detection...")
@@ -270,8 +274,8 @@ class FileAnalyzer:
         analysis["risk_level_for_IAT"] = getattr(static_result, "risk_level_for_IAT", "Unknown")
         
         analysis["risk_level"] = categorize_risk(static_result, 
-                                                 self.vt_client.query_hash(get_all_hashes(analysis_target)["sha256"]), 
-                                                 self.packer_detector.detect(filepath)
+                                                 vt_result, 
+                                                 packer_result
                                                 )
 
         # Clean up temporary UPX files
@@ -303,11 +307,13 @@ class FileAnalyzer:
             logger.error(f"❌ Path is not a directory: {dirpath}")
             return []
 
-        # Collect files for analysis
+        # Collect files for analysis (ignore internal 'processing' directory)
         pattern = "**/*" if recursive else "*"
         files   = [
             f for f in dirpath.glob(pattern)
-            if f.is_file() and f.stat().st_size >= MIN_FILE_SIZE
+            if f.is_file() 
+            and "processing" not in f.parts 
+            and f.stat().st_size >= MIN_FILE_SIZE
         ]
 
         logger.info(f"📂 Directory: {dirpath} | {len(files)} files to analyze")
@@ -350,12 +356,14 @@ class FileAnalyzer:
         if not filepath.is_file():
             msg = f"Path is not a file: {filepath}"
             logger.error(f"❌ {msg}")
+            print(f"ERROR: {msg}")
             analysis["error"] = msg
             return False
 
         if not os.access(filepath, os.R_OK):
             msg = f"No read permission: {filepath}"
             logger.error(f"❌ {msg}")
+            print(f"ERROR: {msg}")
             analysis["error"] = msg
             return False
 
@@ -363,6 +371,7 @@ class FileAnalyzer:
         if file_size < MIN_FILE_SIZE:
             msg = f"File is too small ({file_size} bytes) — skip"
             logger.warning(f"⚠️  {msg}")
+            print(f"WARNING: {msg}")
             analysis["error"] = msg
             return False
 

@@ -128,6 +128,10 @@ def main() -> int:
                 return 1
 
             result = analyzer.analyze_file(target)
+            
+            # Use original name if provided by backend (important for ZIP extraction)
+            if overrides.get("original_name"):
+                result["file_name"] = overrides["original_name"]
 
             # Normalize to list for consistent contract
             payload = {
@@ -151,6 +155,13 @@ def main() -> int:
 
             results = analyzer.analyze_directory(target, recursive=args.recursive)
 
+            # Update names from map if available
+            file_map = overrides.get("file_map", {})
+            for res in results:
+                stored_name = Path(res.get("file_path", "")).name
+                if stored_name in file_map:
+                    res["file_name"] = file_map[stored_name]
+
             risk_counts = {}
             for r in results:
                 lvl = r.get("risk_level", "Unknown")
@@ -169,6 +180,15 @@ def main() -> int:
 
         # ── Write result.json ──────────────────────────────────────────────────
         out_path = write_result(args.output_dir, payload)
+        
+        # ── Generate PDF report ───────────────────────────────────────────────
+        pdf_path = Path(args.output_dir) / "report.pdf"
+        if args.file:
+            analyzer.report_generator.generate_pdf(result, str(pdf_path))
+        else:
+            # For directory mode, generate a summary report
+            analyzer.report_generator.generate_summary_pdf(payload, str(pdf_path))
+
         print(f"OK: result written to {out_path}", flush=True)
         return 0
 
