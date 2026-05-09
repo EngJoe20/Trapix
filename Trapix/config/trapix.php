@@ -10,8 +10,11 @@ return [
 
     'python_executable'  => env('PYTHON_EXECUTABLE', 'python'),
 
-    // Absolute path to the Tools/main.py script
-    'python_script_path' => env('PYTHON_SCRIPT_PATH', base_path('../Tools/main.py')),
+    // Absolute path to the Tools/bridge.py script
+    'python_script_path' => env('PYTHON_SCRIPT_PATH', base_path('../Tools/bridge.py')),
+
+    // VirusTotal API Key
+    'virustotal_api_key' => env('VIRUSTOTAL_API_KEY'),
 
     // Timeout in seconds for a single Python analysis subprocess
     'python_timeout'     => (int) env('PYTHON_TIMEOUT', 300),

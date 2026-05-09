@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $user = Auth::user()->load('plan');
 
         // ── Quota info ─────────────────────────────────────────────────────────
-        $plan      = $user->effectivePlan();
+        $plan      = $user->effectivePlan() ?? \App\Models\Plan::where('slug', 'free')->first();
         $remaining = $user->remainingAnalyses();
 
         // ── Recent analysis history (paginated) ────────────────────────────────
@@ -30,6 +30,10 @@ class DashboardController extends Controller
         return view('dashboard', compact('user', 'plan', 'remaining', 'jobs'));
     }
 
+    public function __construct(
+        private \App\Services\QuotaService $quotaService
+    ) {}
+
     /**
      * GET /api/dashboard/quota
      * JSON quota info for frontend.
@@ -37,19 +41,37 @@ class DashboardController extends Controller
     public function quota(Request $request)
     {
         $user = Auth::user();
-        $plan = $user->effectivePlan();
+        
+        if ($user) {
+            $plan = $user->effectivePlan() ?? \App\Models\Plan::where('slug', 'free')->first();
+            return response()->json([
+                'type'               => 'user',
+                'plan_name'          => $plan?->name ?? 'Free',
+                'limit'              => $plan?->monthly_analyses ?? 10,
+                'used'               => $user->monthly_analysis_used,
+                'remaining'          => $user->remainingAnalyses(),
+                'unlimited'          => $plan?->hasUnlimitedAnalyses() ?? false,
+                'max_upload_mb'      => $plan?->maxUploadMb() ?? 50,
+            ]);
+        }
 
-        return response()->json([
-            'plan_name'          => $plan?->name ?? 'Free',
-            'monthly_analyses'   => $plan?->monthly_analyses ?? 10,
-            'used_this_month'    => $user->monthly_analysis_used,
-            'remaining'          => $user->remainingAnalyses(),
-            'unlimited'          => $plan?->hasUnlimitedAnalyses() ?? false,
-            'quota_reset_date'   => $user->quota_reset_date?->toDateString(),
-            'max_upload_mb'      => $plan?->maxUploadMb() ?? 50,
-            'ai_access'          => $plan?->ai_access ?? false,
-            'report_dl_unlimited'=> $plan?->report_downloads_unlimited ?? false,
-        ]);
+        // Guest logic
+        $guestToken = $request->input('guest_token') ?? $request->session()->get('guest_token');
+        if ($guestToken) {
+            $remaining = $this->quotaService->guestRemaining($guestToken);
+            $used = \App\Services\QuotaService::GUEST_MAX - $remaining;
+            return response()->json([
+                'type'      => 'guest',
+                'plan_name' => 'Guest',
+                'limit'     => \App\Services\QuotaService::GUEST_MAX,
+                'used'      => $used,
+                'remaining' => $remaining,
+                'unlimited' => false,
+                'max_upload_mb' => 10,
+            ]);
+        }
+
+        return response()->json(['error' => 'No session or user found'], 401);
     }
 
     /**

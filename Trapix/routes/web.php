@@ -20,6 +20,10 @@ Route::get('/pricing', function () {
     return view('pricing');
 })->name('pricing');
 
+Route::get('/docs', function () {
+    return view('docs');
+})->name('docs');
+
 // ── Analysis (public — quota enforced in middleware/controller) ───────────────
 Route::get('/analyze', function () {
     return view('analyze');
@@ -60,8 +64,6 @@ Route::prefix('api')->name('api.')->group(function () {
         ->name('analysis.report');
 
     // ── Dashboard quota ───────────────────────────────────────────────────────
-    Route::middleware('auth')->group(function () {
-        Route::get('/dashboard/quota', [DashboardController::class, 'quota'])
-            ->name('dashboard.quota');
-    });
+    Route::get('/dashboard/quota', [DashboardController::class, 'quota'])
+        ->name('dashboard.quota');
 });
