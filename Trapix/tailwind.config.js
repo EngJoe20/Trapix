@@ -6,24 +6,23 @@ export default {
     './resources/views/**/*.blade.php',
     './resources/js/**/*.js'
   ],
-
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
         sans: ['Raleway', ...defaultTheme.fontFamily.sans],
       },
-
+      screens: {
+        'midmd': '880px',
+      },
       colors: {
         primary: '#1d4ed8',
-
         bg: 'rgb(var(--color-bg))',
-
         box: {
           bg: 'rgb(var(--color-box) / <alpha-value>)',
           border: 'rgb(var(--box-border) / <alpha-value>)',
           shadow: 'rgb(var(--box-sd) / <alpha-value>)',
         },
-
         heading: {
           1: 'rgb(var(--heading-1) / <alpha-value>)',
           2: 'rgb(var(--heading-2) / <alpha-value>)',
@@ -32,6 +31,5 @@ export default {
       }
     },
   },
-
   plugins: [forms],
 }

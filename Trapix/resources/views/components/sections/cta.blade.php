@@ -33,11 +33,11 @@
             <!-- Content -->
             <div class="mx-auto text-center max-w-xl md:max-w-2xl relative">
 
-                <h1 class="text-3xl/tight sm:text-4xl/tight md:text-5xl/tight font-bold text-heading-1">
+                <h1 class="text-3xl leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight font-bold text-heading-1">
 
                     Quick Start your
 
-                    <span class="text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 from-20% via-primary via-30% to-green-600">
+                    <span class="heading-gradient">
                         Strategic Digital
                     </span>
 

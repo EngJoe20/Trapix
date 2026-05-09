@@ -97,9 +97,9 @@ $navItems = [
                 <button data-toggle-nav data-open-nav="false"
                         class="lg:hidden lg:invisible outline-none w-7 h-auto flex flex-col relative">
 
-                    <span id="line1" class="w-6 h-0.5 rounded-full bg-heading-2"></span>
-                    <span id="line2" class="w-6 mt-1 h-0.5 rounded-full bg-heading-2"></span>
-                    <span id="line3" class="w-6 mt-1 h-0.5 rounded-full bg-heading-2"></span>
+                    <span id="line1" class="w-6 h-0.5 rounded-full bg-heading-2 transition-all duration-300 ease-linear"></span>
+                    <span id="line2" class="w-6 mt-1 h-0.5 rounded-full bg-heading-2 transition-all duration-300 ease-linear"></span>
+                    <span id="line3" class="w-6 mt-1 h-0.5 rounded-full bg-heading-2 transition-all duration-300 ease-linear"></span>
 
                     <span class="sr-only">toggle nav</span>
 
