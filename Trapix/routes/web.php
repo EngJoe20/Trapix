@@ -1,20 +1,67 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AnalysisController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// ── Public pages ─────────────────────────────────────────────────────────────
 Route::get('/', function () {
     return view('welcome');
+})->name('home');
+
+Route::get('/pricing', function () {
+    return view('pricing');
+})->name('pricing');
+
+// ── Analysis (public — quota enforced in middleware/controller) ───────────────
+Route::get('/analyze', function () {
+    return view('analyze');
+})->name('analyze');
+
+// ── Authenticated dashboard ───────────────────────────────────────────────────
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/history', [DashboardController::class, 'history'])->name('dashboard.history');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// ── Report download (auth + guest-by-token) ───────────────────────────────────
+Route::get('/analysis/{jobId}/report', [ReportController::class, 'download'])
+    ->name('analysis.report');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
+// ── Auth routes (Breeze) ──────────────────────────────────────────────────────
 require __DIR__ . '/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('api')->name('api.')->group(function () {
+    // ── Analysis jobs ─────────────────────────────────────────────────────────
+    Route::post('/analysis', [AnalysisController::class, 'createJob'])
+        ->middleware(['throttle:10,1'])  // 10 uploads per minute
+        ->name('analysis.create');
+
+    Route::get('/analysis/{id}', [AnalysisController::class, 'status'])
+        ->name('analysis.status');
+
+    Route::get('/analysis/{id}/result', [AnalysisController::class, 'result'])
+        ->name('analysis.result');
+
+    Route::get('/analysis/{jobId}/report', [ReportController::class, 'download'])
+        ->name('analysis.report');
+
+    // ── Dashboard quota ───────────────────────────────────────────────────────
+    Route::middleware('auth')->group(function () {
+        Route::get('/dashboard/quota', [DashboardController::class, 'quota'])
+            ->name('dashboard.quota');
+    });
+});
