@@ -1,21 +1,37 @@
-import defaultTheme from 'tailwindcss/defaultTheme';
-import forms from '@tailwindcss/forms';
+import defaultTheme from 'tailwindcss/defaultTheme'
+import forms from '@tailwindcss/forms'
 
-/** @type {import('tailwindcss').Config} */
 export default {
-    content: [
-        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
-        './storage/framework/views/*.php',
-        './resources/views/**/*.blade.php',
-    ],
+  content: [
+    './resources/views/**/*.blade.php',
+    './resources/js/**/*.js'
+  ],
 
-    theme: {
-        extend: {
-            fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
-            },
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Raleway', ...defaultTheme.fontFamily.sans],
+      },
+
+      colors: {
+        primary: '#1d4ed8',
+
+        bg: 'rgb(var(--color-bg))',
+
+        box: {
+          bg: 'rgb(var(--color-box) / <alpha-value>)',
+          border: 'rgb(var(--box-border) / <alpha-value>)',
+          shadow: 'rgb(var(--box-sd) / <alpha-value>)',
         },
-    },
 
-    plugins: [forms],
-};
+        heading: {
+          1: 'rgb(var(--heading-1) / <alpha-value>)',
+          2: 'rgb(var(--heading-2) / <alpha-value>)',
+          3: 'rgb(var(--heading-3) / <alpha-value>)',
+        },
+      }
+    },
+  },
+
+  plugins: [forms],
+}
