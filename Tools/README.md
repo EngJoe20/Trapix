@@ -1,53 +1,53 @@
-# 🛡️ Malware Triage Framework
+# 🛡️ Trapix — Malware Triage Framework
 
-Professional Malware Triage Framework — Python-based, Modular, Extensible
+**Professional Malware Triage Framework — Python-based, Modular, Extensible**
 
 ---
 
 ## 📋 Overview
 
-Integrated static analysis framework for suspicious files, implementing automated multi-layer triage:
+Trapix is an integrated static analysis framework for suspicious PE files, implementing automated multi-layer triage. It orchestrates detection stages in the correct order and applies branching logic based on each stage's findings — automatically unpacking UPX-packed files before deep analysis, for example.
 
-| Stage | Description |
-|-------|-------------|
-| 1️⃣ Identification | Calculate SHA-256/SHA-1/MD5 and query VirusTotal |
-| 2️⃣ Packer Detection | Check PE signatures + Shannon entropy analysis |
-| 3️⃣ Branching Logic | Automatic UPX handling or warning about limitations |
-| 4️⃣ Deep Analysis | IAT + Imphash + Suspicious APIs + Extract IOCs |
-| 5️⃣ Reporting | Colored terminal + JSON export |
+| Stage | Module | Description |
+|-------|--------|-------------|
+| 1️⃣ Identification | `utils/hashing.py` | Calculate SHA-256 / SHA-1 / MD5 and query VirusTotal |
+| 2️⃣ Packer Detection | `core/packer_detector.py` | Check PE section signatures + Shannon entropy analysis |
+| 3️⃣ Branching Logic | `core/upx_handler.py` | Automatic UPX unpacking or warn about limitations |
+| 4️⃣ Deep Analysis | `core/static_analyzer.py` | IAT + Imphash + Suspicious APIs + Extract IOCs |
+| 5️⃣ Reporting | `core/report_generator.py` | Colored terminal output + JSON export |
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-malware_triage/
+Trapix/
 ├── main.py                  # Entry point + CLI
-├── config.py                # All central settings
+├── config.py                # Central settings (API keys, thresholds, signatures)
 ├── requirements.txt
 ├── README.md
 │
 ├── core/
-│   ├── file_analyzer.py     # Main orchestrator
-│   ├── packer_detector.py   # Packer detection (Signatures + Entropy)
-│   ├── entropy_analyzer.py  # Shannon entropy analysis
-│   ├── static_analyzer.py   # Static analysis (IAT + Strings)
+│   ├── file_analyzer.py     # Main orchestrator — coordinates all stages
+│   ├── packer_detector.py   # Packer detection (signatures + entropy)
+│   ├── entropy_analyzer.py  # Shannon entropy analysis per PE section
+│   ├── static_analyzer.py   # Static analysis (IAT, strings, IOC extraction)
 │   ├── vt_client.py         # VirusTotal API v3 client
 │   ├── upx_handler.py       # Safe UPX unpacking
-│   └── report_generator.py  # Report generation
+│   └── report_generator.py  # Terminal + JSON report generation
 │
 ├── utils/
-│   ├── hashing.py           # Hash calculation
-│   ├── strings.py           # String extraction
+│   ├── hashing.py           # SHA-256 / SHA-1 / MD5 calculation
+│   ├── strings.py           # String extraction from binary
 │   └── logger.py            # Colored logging system
 │
 ├── tools/
-│   └── upx.exe              # (Optional) Local UPX for deployment
+│   └── upx / upx.exe        # (Optional) Local UPX binary for unpacking
 │
-├── samples/                 # Put suspicious files here
+├── samples/                 # Place suspicious files here
 └── output/
-    ├── reports/             # JSON reports
-    └── logs/                # Run logs
+    ├── reports/             # JSON reports (auto-generated)
+    └── logs/                # Run logs (auto-generated)
 ```
 
 ---
@@ -55,67 +55,103 @@ malware_triage/
 ## ⚙️ Installation
 
 ```bash
-# 1. Clone the project
-git clone https://github.com/yourname/malware_triage
-cd malware_triage
+# 1. Clone the repository
+git clone https://github.com/yourname/trapix
+cd trapix
 
-# 2. Create virtual environment (recommended)
+# 2. Create a virtual environment (recommended)
 python -m venv venv
-source venv/bin/activate       # Linux/macOS
-venv\Scripts\activate          # Windows
+source venv/bin/activate        # Linux/macOS
+venv\Scripts\activate           # Windows
 
-# 3. Install requirements
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Set up VirusTotal API Key
-# In config.py:
+# 4. Configure your VirusTotal API key
+# Option A — edit config.py:
 #   VT_API_KEY = "your_key_here"
-# Or environment variable:
-export VT_API_KEY="your_key_here"
+# Option B — environment variable:
+export VT_API_KEY="your_key_here"   # Linux/macOS
+set VT_API_KEY=your_key_here        # Windows
 ```
+
+### Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `pefile` | PE header parsing (imports, sections, metadata) |
+| `requests` | VirusTotal API v3 communication |
+| `colorama` | Colored terminal output |
+| `tabulate` | Formatted result tables |
+| `yara-python` | YARA rule matching (optional extension) |
+| `python-magic` | File-type detection via magic bytes |
 
 ---
 
 ## 🚀 Usage
 
 ```bash
-# Analyze single file
+# Analyze a single file
 python main.py --file samples/suspicious.exe
 
-# Analyze entire folder
-python main.py --dir samples/ --recursive
+# Analyze an entire folder (recursive by default)
+python main.py --dir samples/
 
-# Without VirusTotal (local analysis only)
+# Skip VirusTotal lookup (local analysis only)
 python main.py --file malware.exe --no-vt
 
-# With API key directly
+# Provide a VirusTotal API key at runtime
 python main.py --file sample.exe --vt-key YOUR_KEY_HERE
 
-# Without JSON export
+# Suppress JSON export
 python main.py --file sample.exe --no-json
+
+# Quiet mode — show only important results
+python main.py --file sample.exe --quiet
 ```
+
+### CLI Reference
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--file PATH` | `-f` | Single file to analyze |
+| `--dir PATH` | `-d` | Directory to scan |
+| `--recursive` | `-r` | Scan subdirectories (default: enabled) |
+| `--vt-key KEY` | | VirusTotal API key (overrides config.py) |
+| `--no-vt` | | Skip VirusTotal query |
+| `--no-json` | | Skip JSON report export |
+| `--quiet` | `-q` | Suppress verbose output |
 
 ---
 
-## 🔧 Configuration
+## 🔧 Configuration (`config.py`)
 
-### VirusTotal API Key
+### VirusTotal
 ```python
-# config.py
-VT_API_KEY = "your_api_key"          # or environment variable VT_API_KEY
-VT_RATE_LIMIT_DELAY = 15             # seconds (4 requests/minute free)
+VT_API_KEY = "your_api_key"   # or set env var VT_API_KEY
+VT_RATE_LIMIT_DELAY = 15      # seconds between requests (free tier: 4 req/min)
 ```
 
 ### Entropy Threshold
 ```python
-ENTROPY_PACKED_THRESHOLD = 7.0       # above this value = suspicious
+ENTROPY_PACKED_THRESHOLD = 7.0  # sections above this are flagged as packed/encrypted
 ```
 
-### Local UPX
+### Parallel Processing
+```python
+MAX_WORKERS = 4  # concurrent processes when scanning large directories
 ```
-# Place UPX in:
-tools/upx.exe    (Windows)
-tools/upx        (Linux/macOS)
+
+### Minimum File Size
+```python
+MIN_FILE_SIZE = 64  # bytes — files smaller than this are skipped
+```
+
+### Local UPX Binary
+Place the UPX executable in the `tools/` directory:
+```
+tools/upx.exe   (Windows)
+tools/upx       (Linux/macOS)
 ```
 
 ---
@@ -124,10 +160,10 @@ tools/upx        (Linux/macOS)
 
 ```
 ════════════════════════════════════════════════════════════════════════════════
-  MALWARE TRIAGE FRAMEWORK — FILE ANALYSIS REPORT
+  TRAPIX — FILE ANALYSIS REPORT
 ════════════════════════════════════════════════════════════════════════════════
-  📁 File: /samples/suspicious.exe
-  📅 Analysis Time: 2024-01-15 14:30:22
+  📁 File: samples/suspicious.exe
+  📅 Analysis Time: 2026-05-08 20:54:23
 
 [ IDENTIFICATION ]
 ╭──────────┬──────────────────────────────────────────────────────────────╮
@@ -160,14 +196,14 @@ tools/upx        (Linux/macOS)
 
 ---
 
-## 🔌 Extension
+## 🔌 Extending Trapix
 
-### Add new packer
+### Add a new packer signature
 ```python
 # config.py
 KNOWN_PACKER_SECTIONS = [
     ...
-    ".mynewpacker",  # Add here
+    ".mynewpacker",
 ]
 
 # core/packer_detector.py
@@ -177,7 +213,7 @@ PACKER_SECTION_MAP = {
 }
 ```
 
-### Add suspicious API
+### Add a suspicious API
 ```python
 # config.py
 SUSPICIOUS_APIS = {
@@ -186,7 +222,7 @@ SUSPICIOUS_APIS = {
 }
 ```
 
-### Add IOC pattern
+### Add an IOC extraction pattern
 ```python
 # config.py
 STRING_PATTERNS = {
@@ -199,12 +235,12 @@ STRING_PATTERNS = {
 
 ## ⚠️ Disclaimer
 
-This tool is intended **for security research and digital forensics** only.  
-Do not use it to analyze files you do not have permission to examine.  
-The user is fully responsible for its use.
+Trapix is intended **for security research and digital forensics only.**
+Do not use it to analyze files you do not have permission to examine.
+The user is fully responsible for how this tool is used.
 
 ---
 
 ## 📄 License
 
-MIT License — For free use in research and professional environments.
+MIT License — Free for use in research and professional environments.
