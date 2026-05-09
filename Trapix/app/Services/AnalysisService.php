@@ -21,7 +21,6 @@ class AnalysisService
 {
     public function __construct(
         private QuotaService $quota,
-        private StorageService $storageService,
     ) {}
 
     /**
@@ -50,18 +49,124 @@ class AnalysisService
             'options'     => $options,
         ]);
 
-        // ── 2. Store each uploaded file ────────────────────────────────────────
+        // ── 2. Store each uploaded file (with ZIP extraction logic) ────────────
+        $finalFileCount = 0;
         foreach ($files as $file) {
-            $this->storeUploadedFile($file, $job);
+            if ($this->isZipFile($file)) {
+                $finalFileCount += $this->extractAndStoreZip($file, $job);
+            } else {
+                $this->storeUploadedFile($file, $job);
+                $finalFileCount++;
+            }
         }
 
-        // ── 3. Dispatch background job ─────────────────────────────────────────
+        // ── 3. Update job if count changed or ZIP was extracted ────────────────
+        if ($finalFileCount > 1) {
+            $job->update([
+                'input_type' => 'folder',
+                'file_count' => $finalFileCount
+            ]);
+        }
+
+        // ── 4. Dispatch background job ─────────────────────────────────────────
         RunPythonAnalysis::dispatch($job->id)
             ->onQueue($this->resolveQueue($userId));
 
-        Log::info('AnalysisJob dispatched', ['job_id' => $job->id, 'files' => count($files)]);
+        Log::info('AnalysisJob dispatched', ['job_id' => $job->id, 'final_files' => $finalFileCount]);
 
         return $job->fresh(['files']);
+    }
+
+    /**
+     * Check if the uploaded file is a ZIP archive.
+     */
+    private function isZipFile(HttpUploadedFile $file): bool
+    {
+        $mime = $file->getMimeType();
+        $ext  = strtolower($file->getClientOriginalExtension());
+        
+        return in_array($mime, ['application/zip', 'application/x-zip-compressed']) || $ext === 'zip';
+    }
+
+    /**
+     * Extract ZIP contents and store each file as an UploadedFile.
+     */
+    private function extractAndStoreZip(HttpUploadedFile $zipFile, AnalysisJob $job): int
+    {
+        if (!class_exists('\ZipArchive')) {
+            Log::error('ZipArchive extension is not installed.');
+            return 0;
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFile->getRealPath()) !== true) {
+            Log::error('Failed to open ZIP file', ['path' => $zipFile->getRealPath()]);
+            return 0;
+        }
+
+        $extractPath = storage_path("app/temp/zip_extract_{$job->id}_" . Str::random(8));
+        if (!is_dir($extractPath)) {
+            mkdir($extractPath, 0755, true);
+        }
+
+        Log::info("Extracting ZIP to: {$extractPath}");
+        
+        if (!$zip->extractTo($extractPath)) {
+            Log::error("Failed to extract ZIP", ['job_id' => $job->id]);
+            $zip->close();
+            return 0;
+        }
+        $zip->close();
+
+        $filesCount = 0;
+        $allFiles   = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($allFiles as $file) {
+            if ($file->isDir()) continue;
+
+            $filename = $file->getFilename();
+            $pathname = $file->getPathname();
+            
+            // Skip system/internal files
+            if (str_starts_with($filename, '.') || str_contains($pathname, '__MACOSX')) {
+                continue;
+            }
+
+            $extension  = $file->getExtension();
+            $storedName = Str::uuid() . ($extension ? '.' . $extension : '');
+            $destPath   = "jobs/{$job->id}/{$storedName}";
+
+            $content = file_get_contents($file->getRealPath());
+            if ($content === false) {
+                Log::error("Failed to read extracted file: {$file->getRealPath()}");
+                continue;
+            }
+
+            Storage::disk('local')->put($destPath, $content);
+            $fullDestPath = Storage::disk('local')->path($destPath);
+
+            Log::info("Stored file: {$filename} -> {$destPath} (Size: " . strlen($content) . " bytes)");
+
+            UploadedFile::create([
+                'analysis_job_id' => $job->id,
+                'original_name'   => $filename,
+                'stored_name'     => $storedName,
+                'disk'            => 'local',
+                'path'            => $destPath,
+                'mime_type'       => \Illuminate\Support\Facades\File::mimeType($fullDestPath) ?? 'application/octet-stream',
+                'size_bytes'      => strlen($content),
+                'sha256'          => hash('sha256', $content),
+            ]);
+
+            $filesCount++;
+        }
+
+        // Cleanup temp extraction folder
+        \Illuminate\Support\Facades\File::deleteDirectory($extractPath);
+
+        return $filesCount;
     }
 
     /**

@@ -59,21 +59,38 @@ class RunPythonAnalysis implements ShouldQueue
             } elseif ($job->guest_token && $result['success']) {
                 $quota->incrementGuest($job->guest_token);
             }
+            
+            // ── Call AI Expert System if requested ─────────────────────────────
+            $tools = $job->options['tools'] ?? [];
+            if (in_array('ai', $tools) && $result['success']) {
+                try {
+                    app(\App\Services\AI\AiAnalysisService::class)->run($job);
+                } catch (\Throwable $e) {
+                    Log::error('RunPythonAnalysis: AI Expert System failed', [
+                        'job'   => $job->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // We don't fail the whole job if only AI fails
+                }
+            }
 
             Log::info('RunPythonAnalysis: Completed', [
                 'job'   => $job->id,
                 'risk'  => $job->result['risk_level'] ?? 'N/A',
             ]);
         } catch (\Throwable $e) {
-            Log::error('RunPythonAnalysis: Exception', [
-                'job'   => $this->jobId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            $fileName = $job->files->first()?->original_name ?? 'unknown';
+            
+            Log::error("RunPythonAnalysis: Analysis Failed for [{$fileName}]", [
+                'job_id'   => $this->jobId,
+                'file'     => $fileName,
+                'error'    => $e->getMessage(),
+                'trace'    => $e->getTraceAsString(),
             ]);
 
             $job->update([
                 'status'        => AnalysisJob::STATUS_FAILED,
-                'error_message' => $e->getMessage(),
+                'error_message' => "Error analyzing [{$fileName}]: " . $e->getMessage(),
                 'completed_at'  => now(),
             ]);
 

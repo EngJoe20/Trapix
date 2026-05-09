@@ -39,6 +39,7 @@ class UploadAnalysisRequest extends FormRequest
                 // Note: mime validation is lenient because binary files may have
                 // application/octet-stream regardless of actual type.
             ],
+            'options'           => ['sometimes', 'nullable', 'string'],
             'skip_vt'           => ['sometimes', 'boolean'],
             'vt_api_key'        => ['sometimes', 'nullable', 'string', 'size:64'],
             'guest_token'       => ['sometimes', 'nullable', 'string', 'max:80'],

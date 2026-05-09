@@ -34,42 +34,81 @@ class AnalysisController extends Controller
      */
     public function createJob(UploadAnalysisRequest $request): JsonResponse
     {
-        $user       = Auth::user();
-        $guestToken = $request->input('guest_token') ?? $request->session()->get('guest_token');
+        try {
+            $user       = Auth::user();
+            $guestToken = $request->input('guest_token') ?? $request->session()->get('guest_token');
 
-        // ── Issue guest token if not authenticated ─────────────────────────────
-        if (! $user && ! $guestToken) {
-            $guestToken = Str::random(48);
-            $request->session()->put('guest_token', $guestToken);
-        }
+            \Illuminate\Support\Facades\Log::channel('trapix')->info('CreateJob Attempt', [
+                'user_id'    => $user?->id,
+                'email'      => $user?->email,
+                'guest_token' => $guestToken,
+                'files_count' => count($request->file('files') ?? []),
+                'ip'         => $request->ip(),
+            ]);
 
-        // ── Quota check ────────────────────────────────────────────────────────
-        $quota = $this->quota->check($user, $guestToken);
-        if (! $quota['allowed']) {
+            // ── Issue guest token if not authenticated ─────────────────────────────
+            if (! $user && ! $guestToken) {
+                $guestToken = Str::random(48);
+                $request->session()->put('guest_token', $guestToken);
+            }
+
+            // ── Quota check ────────────────────────────────────────────────────────
+            $quota = $this->quota->check($user, $guestToken);
+            if (! $quota['allowed']) {
+                \Illuminate\Support\Facades\Log::channel('trapix')->warning('Quota Denied', [
+                    'user_id' => $user?->id,
+                    'reason'  => $quota['reason'],
+                ]);
+                return response()->json([
+                    'error'   => $quota['reason'],
+                    'upgrade' => $quota['upgrade'],
+                ], 429);
+            }
+
+            // ── Create the job ─────────────────────────────────────────────────────
+            $files   = $request->file('files'); // array
+            $options = $request->only(['skip_vt', 'vt_api_key', 'options']);
+            
+            if (isset($options['options']) && is_string($options['options'])) {
+                $decodedOptions = json_decode($options['options'], true);
+                if (is_array($decodedOptions)) {
+                    $options = array_merge($options, $decodedOptions);
+                }
+                unset($options['options']);
+            }
+
+            $job = $this->analysisService->createJob(
+                files: $files,
+                userId: $user?->id,
+                guestToken: $guestToken,
+                options: $options,
+            );
+
+            \Illuminate\Support\Facades\Log::channel('trapix')->info('Job Created Successfully', [
+                'job_id' => $job->id,
+                'user_id' => $user?->id,
+            ]);
+
             return response()->json([
-                'error'   => $quota['reason'],
-                'upgrade' => $quota['upgrade'],
-            ], 429);
+                'job_id'      => $job->id,
+                'status'      => $job->status,
+                'file_count'  => $job->file_count,
+                'guest_token' => $guestToken,
+                'poll_url'    => route('api.analysis.status', $job->id),
+            ], 202);
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::channel('trapix')->error('CreateJob Exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'error' => 'Internal server error during job creation. Developers have been notified.',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         }
-
-        // ── Create the job ─────────────────────────────────────────────────────
-        $files   = $request->file('files'); // array
-        $options = $request->only(['skip_vt', 'vt_api_key']);
-
-        $job = $this->analysisService->createJob(
-            files: $files,
-            userId: $user?->id,
-            guestToken: $guestToken,
-            options: $options,
-        );
-
-        return response()->json([
-            'job_id'      => $job->id,
-            'status'      => $job->status,
-            'file_count'  => $job->file_count,
-            'guest_token' => $guestToken,
-            'poll_url'    => route('api.analysis.status', $job->id),
-        ], 202);
     }
 
     /**

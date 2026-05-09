@@ -36,15 +36,16 @@ class PythonBridgeService
     private string $scriptPath;
 
     /**
-     * Timeout in seconds for a single analysis run.
+     * VirusTotal API Key from config
      */
-    private int $timeout;
+    private ?string $vtApiKey;
 
     public function __construct()
     {
         $this->pythonBin  = config('trapix.python_executable', 'python');
         $this->scriptPath = config('trapix.python_script_path', base_path('../Tools/main.py'));
         $this->timeout    = (int) config('trapix.python_timeout', 300);
+        $this->vtApiKey   = config('trapix.virustotal_api_key');
     }
 
     /**
@@ -56,7 +57,7 @@ class PythonBridgeService
     public function run(AnalysisJob $job): array
     {
         // ── Build working directory ─────────────────────────────────────────────
-        $workDir = storage_path("app/jobs/{$job->id}/processing");
+        $workDir = Storage::disk(config('trapix.storage_disk', 'local'))->path("jobs/{$job->id}/processing");
         if (! is_dir($workDir)) {
             mkdir($workDir, 0755, true);
         }
@@ -69,10 +70,18 @@ class PythonBridgeService
         // Single file → pass path directly; folder → pass the jobs/{id}/ directory
         $files      = $job->files;
         $targetPath = count($files) === 1
-            ? storage_path("app/{$files->first()->path}")
-            : storage_path("app/jobs/{$job->id}");
+            ? Storage::disk(config('trapix.storage_disk', 'local'))->path($files->first()->path)
+            : Storage::disk(config('trapix.storage_disk', 'local'))->path("jobs/{$job->id}");
 
         // ── Build command ──────────────────────────────────────────────────────
+        if (! file_exists($targetPath)) {
+            Log::error("PythonBridge: Target path not found on disk", [
+                'job_id' => $job->id,
+                'path'   => $targetPath
+            ]);
+            return $this->failureResult("Internal error: Analysis target not found on disk.", -1);
+        }
+
         $args = [
             $this->pythonBin,
             $this->scriptPath,
@@ -91,9 +100,10 @@ class PythonBridgeService
             $args[] = '--no-vt';
         }
 
-        if ($job->vt_api_key) {
+        $vtKey = $job->vt_api_key ?: $this->vtApiKey;
+        if ($vtKey) {
             $args[] = '--vt-key';
-            $args[] = $job->vt_api_key;
+            $args[] = $vtKey;
         }
 
         // Tell the script where to put its output
@@ -103,26 +113,42 @@ class PythonBridgeService
         $args[] = 'json';
 
         Log::info('PythonBridge: Launching subprocess', [
-            'job'  => $job->id,
-            'args' => implode(' ', array_slice($args, 0, 5)) . ' ...',
+            'job'     => $job->id,
+            'command' => implode(' ', $args),
+            'workdir' => $workDir,
         ]);
 
         // ── Execute ─────────────────────────────────────────────────────────────
-        $process = new Process($args, $workDir, null, null, $this->timeout);
+        $process = new Process($args, $workDir, [
+            'PYTHONIOENCODING' => 'utf-8',
+        ], null, $this->timeout);
 
         try {
             $process->run();
         } catch (\Exception $e) {
-            Log::error('PythonBridge: Process exception', ['job' => $job->id, 'err' => $e->getMessage()]);
-            return $this->failureResult($e->getMessage(), -1);
+            Log::error('PythonBridge: Process execution exception', [
+                'job'     => $job->id,
+                'file'    => $job->files->first()?->original_name,
+                'error'   => $e->getMessage(),
+                'command' => implode(' ', $args)
+            ]);
+            return $this->failureResult("Subprocess exception: {$e->getMessage()}", -1);
         }
 
         $exitCode = $process->getExitCode();
         $stderr   = trim($process->getErrorOutput());
+        $stdout   = trim($process->getOutput());
 
         if ($exitCode !== 0) {
-            Log::warning('PythonBridge: Non-zero exit', ['job' => $job->id, 'code' => $exitCode, 'stderr' => $stderr]);
-            return $this->failureResult($stderr ?: 'Python script returned non-zero exit code', $exitCode);
+            Log::warning('PythonBridge: Subprocess returned non-zero exit code', [
+                'job'     => $job->id,
+                'file'    => $job->files->first()?->original_name,
+                'code'    => $exitCode,
+                'stderr'  => $stderr,
+                'stdout'  => $stdout,
+                'command' => implode(' ', $args)
+            ]);
+            return $this->failureResult($stderr ?: 'Python script failed without stderr output', $exitCode);
         }
 
         // ── Parse result.json ─────────────────────────────────────────────────
@@ -137,7 +163,7 @@ class PythonBridgeService
 
         // ── Check for optional PDF ────────────────────────────────────────────
         $pdfPath = null;
-        $pdfSrc  = "{$workDir}/report.pdf";
+        $pdfSrc  = $workDir . DIRECTORY_SEPARATOR . 'report.pdf';
         if (file_exists($pdfSrc)) {
             // Move to permanent reports storage
             $pdfDest = "reports/{$job->id}/report.pdf";
@@ -159,7 +185,8 @@ class PythonBridgeService
      */
     public function persistResult(AnalysisJob $job, array $bridgeResult): void
     {
-        $riskLevel = $bridgeResult['result']['risk_level'] ?? null;
+        // ── Extract risk level from summary ───────────────────────────────────
+        $riskLevel = $bridgeResult['result']['summary']['risk_level'] ?? null;
 
         // ── Save JSON result next to the job ──────────────────────────────────
         $jsonPath = null;
@@ -194,12 +221,19 @@ class PythonBridgeService
 
     private function buildRequest(AnalysisJob $job, string $workDir): array
     {
+        $fileMap = [];
+        foreach ($job->files as $f) {
+            $fileMap[$f->stored_name] = $f->original_name;
+        }
+
         return [
-            'job_id'      => $job->id,
-            'work_dir'    => $workDir,
-            'skip_vt'     => $job->skip_vt,
-            'vt_api_key'  => $job->vt_api_key,
-            'options'     => $job->options ?? [],
+            'job_id'        => $job->id,
+            'work_dir'      => $workDir,
+            'skip_vt'       => $job->skip_vt,
+            'vt_api_key'    => $job->vt_api_key,
+            'original_name' => $job->files->first()?->original_name,
+            'file_map'      => $fileMap,
+            'options'       => $job->options ?? [],
         ];
     }
 
