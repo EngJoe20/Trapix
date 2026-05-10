@@ -11,6 +11,16 @@ namespace App\Services\AI;
 interface AiProviderInterface
 {
     /**
+     * Set the dynamic per-user configuration for this provider instance.
+     *
+     * @param string|null $apiKey
+     * @param string|null $baseUrl
+     * @param string|null $model
+     * @return self
+     */
+    public function setConfig(?string $apiKey = null, ?string $baseUrl = null, ?string $model = null): self;
+
+    /**
      * Analyze the JSON result from the Python engine and return structured insights.
      *
      * @param  array  $analysisResult  The result dict from Python (file_analyzer output)

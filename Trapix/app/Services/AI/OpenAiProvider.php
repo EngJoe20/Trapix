@@ -28,6 +28,28 @@ class OpenAiProvider implements AiProviderInterface
     public function providerName(): string { return 'openai'; }
     public function modelName(): string    { return $this->model; }
 
+    /**
+     * Set the dynamic per-user configuration for this provider instance.
+     *
+     * @param string|null $apiKey
+     * @param string|null $baseUrl
+     * @param string|null $model
+     * @return self
+     */
+    public function setConfig(?string $apiKey = null, ?string $baseUrl = null, ?string $model = null): self
+    {
+        if ($apiKey) {
+            $this->apiKey = $apiKey;
+        }
+        if ($baseUrl) {
+            $this->baseUrl = rtrim($baseUrl, '/');
+        }
+        if ($model) {
+            $this->model = $model;
+        }
+        return $this;
+    }
+
     public function analyze(array $analysisResult): array
     {
         $prompt = $this->buildAnalysisPrompt($analysisResult);

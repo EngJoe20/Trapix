@@ -19,10 +19,12 @@ use Illuminate\Support\Facades\Log;
 class AiAnalysisService
 {
     private AiProviderInterface $provider;
+    private string $providerName;
 
     public function __construct()
     {
-        $this->provider = $this->resolveProvider();
+        // Default system provider if user has no specific preference selected
+        $this->providerName = config('trapix.ai_provider', 'gemini');
     }
 
     /**
@@ -31,6 +33,13 @@ class AiAnalysisService
     public function run(AnalysisJob $job): AiResponse
     {
         abort_unless($job->isCompleted() && $job->result, 422, 'Job not ready for AI analysis.');
+
+        // User might have requested a specific tool/provider or we use the default
+        // The frontend could send a specific provider, but for now we use the default system provider
+        // and inject the user's keys if they have an integration for it.
+        $user = $job->user; 
+        
+        $this->provider = AIManager::resolveProvider($user, $this->providerName);
 
         $aiRecord = AiResponse::updateOrCreate(
             ['analysis_job_id' => $job->id],
@@ -58,20 +67,5 @@ class AiAnalysisService
         }
 
         return $aiRecord->fresh();
-    }
-
-    // ── Provider resolution ───────────────────────────────────────────────────
-
-    private function resolveProvider(): AiProviderInterface
-    {
-        $provider = config('trapix.ai_provider', 'openai');
-
-        return match ($provider) {
-            'openai' => app(OpenAiProvider::class),
-            // 'claude'  => app(ClaudeProvider::class),
-            // 'gemini'  => app(GeminiProvider::class),
-            // 'ollama'  => app(OllamaProvider::class),
-            default  => throw new \InvalidArgumentException("Unknown AI provider: {$provider}"),
-        };
     }
 }
