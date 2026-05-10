@@ -1,5 +1,5 @@
 <x-guest-layout>
- 
+     <x-slot name="title">Login | Trapix</x-slot>
     {{-- ── Session Status ───────────────────────────────────── --}}
     <x-auth-session-status class="mb-5" :status="session('status')" />
  
@@ -73,7 +73,7 @@
         </x-primary-button>
  
     </form>
-    
+
     {{-- ── Dev Quick Login ──────────────────────────────────── --}}
     <div class="mt-6 pt-5 border-t border-glass">
         <p class="text-[0.70rem] font-medium uppercase tracking-widest text-muted-contrast mb-2">

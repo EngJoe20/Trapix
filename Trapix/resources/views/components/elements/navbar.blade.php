@@ -15,16 +15,6 @@
 
         <nav class="w-full flex justify-between gap-6 relative items-center">
 
-            <!-- Logo
-            <div class="min-w-max inline-flex relative group">
-                <a href="/" class="relative flex items-center gap-3">
-                    <img
-                        src="{{ asset('images/logo.png') }}"
-                        alt="Trapix"
-                        class="h-20 w-auto object-contain"/>
-                </a>
-            </div> -->
-
             <!-- Logo -->
                 <div class="min-w-max inline-flex relative group">
                     <a href="/" class="relative flex items-center gap-3">

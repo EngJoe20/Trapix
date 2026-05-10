@@ -5,23 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ $title ?? config('app.name', 'Trapix') }}</title>
 
-    {{--
-        ── Favicon / Tab Icon ──────────────────────────────────────
-        Place your icon files inside  public/  then update the hrefs.
-
-        Recommended files to add:
-          public/favicon.ico          ← classic browsers
-          public/favicon.png          ← modern browsers (32×32 px)
-          public/favicon-192.png      ← Android / PWA  (192×192 px)
-          public/apple-touch-icon.png ← iOS home screen (180×180 px)
-
-        Supported formats: .ico  .png  .svg  .webp
-    --}}
-    <link rel="icon"             type="image/x-icon" href="{{ asset('favicon.ico') }}" />
-    <link rel="icon"             type="image/png"    href="{{ asset('favicon.png') }}" sizes="32x32" />
-    <link rel="apple-touch-icon"                     href="{{ asset('apple-touch-icon.png') }}" sizes="180x180" />
+    {{-- ── Favicon: uses your existing logo ──────────────────── --}}
+    <link rel="icon"             type="image/png" href="{{ asset('images/logo.png') }}" />
+    <link rel="shortcut icon"    type="image/png" href="{{ asset('images/logo.png') }}" />
+    <link rel="apple-touch-icon"                  href="{{ asset('images/logo.png') }}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -231,24 +220,63 @@
         .text-heading-1       { color: var(--text-primary); }
         .text-green-accent    { color: var(--green-vivid); }
         .border-glass         { border-color: var(--glass-border); }
+
+        /* ─── Top-left fixed logo ────────────────────────────── */
+        .auth-top-logo {
+            position: fixed;
+            top: 20px;
+            left: 100px;
+            z-index: 20;
+        }
+
+        /* idle: soft breathing glow */
+        @keyframes logoBreathe {
+            0%, 100% { filter: drop-shadow(0 0 6px rgba(0,220,0,0.25)); }
+            50%       { filter: drop-shadow(0 0 18px rgba(0,220,0,0.55)); }
+        }
+
+        /* hover: flare burst */
+        @keyframes logoFlare {
+            0%   { filter: drop-shadow(0 0 8px  rgba(0,220,0,0.5)); }
+            40%  { filter: drop-shadow(0 0 30px rgba(0,220,0,1.0)) drop-shadow(0 0 60px rgba(0,220,0,0.4)); }
+            100% { filter: drop-shadow(0 0 16px rgba(0,220,0,0.7)); }
+        }
+
+        /* hover: bounce-up */
+        @keyframes logoBounce {
+            0%   { transform: scale(1)    translateY(0); }
+            30%  { transform: scale(1.12) translateY(-8px); }
+            55%  { transform: scale(0.97) translateY(2px); }
+            75%  { transform: scale(1.05) translateY(-3px); }
+            100% { transform: scale(1.04) translateY(0); }
+        }
+
+        .auth-top-logo img {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+            animation: logoBreathe 3s ease-in-out infinite;
+            cursor: pointer;
+        }
+        .auth-top-logo:hover img {
+            animation: logoFlare .5s ease-out forwards, logoBounce .5s ease-out forwards;
+        }
     </style>
 </head>
 
 <body class="text-white antialiased">
 
-    {{-- ── Animated Green Blob Background ─────────────────── --}}
-    <div class="auth-bg">
-        <div class="blob blob-top"></div>
-        <div class="blob blob-bl"></div>
-        <div class="blob blob-br"></div>
-    </div>
-
     {{-- ── Centered Content ─────────────────────────────────── --}}
     <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
-        <div class="w-full max-w-sm">
+        <div class="w-full max-w-lg">
+
+            {{-- ── Logo above card ─────────────────────────────── --}}
+            <a href="{{ route('home') }}" class="auth-top-logo">
+                <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" />
+            </a>
 
             {{-- Glassmorphism Card --}}
-            <div class="glass-card px-9 py-10">
+            <div class="glass-card px-12 py-7">
                 {{ $slot }}
             </div>
 

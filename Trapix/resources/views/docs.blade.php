@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Documentation - Trapix')
+@section('title', 'Documentation | Trapix')
 
 @section('content')
 <section class="relative min-h-screen py-12 px-6 overflow-hidden bg-bg">

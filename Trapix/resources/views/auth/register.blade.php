@@ -1,5 +1,5 @@
 <x-guest-layout>
-
+    <x-slot name="title">Register | Trapix</x-slot>
     {{-- ── Heading ──────────────────────────────────────────── --}}
     <h1 class="text-[1.85rem] font-semibold tracking-tight text-center text-white mb-1">
         Create account
