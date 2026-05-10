@@ -68,7 +68,12 @@ class PythonBridgeService
 
         // ── Resolve the target path for the Python script ──────────────────────
         // Single file → pass path directly; folder → pass the jobs/{id}/ directory
-        $files      = $job->files;
+        $files = $job->files;
+
+        if ($files->isEmpty()) {
+            return $this->failureResult("Internal error: No files associated with this job.", -1);
+        }
+
         $targetPath = count($files) === 1
             ? Storage::disk(config('trapix.storage_disk', 'local'))->path($files->first()->path)
             : Storage::disk(config('trapix.storage_disk', 'local'))->path("jobs/{$job->id}");

@@ -53,7 +53,14 @@ class AnalysisService
         $finalFileCount = 0;
         foreach ($files as $file) {
             if ($this->isZipFile($file)) {
-                $finalFileCount += $this->extractAndStoreZip($file, $job);
+                $extractedCount = $this->extractAndStoreZip($file, $job);
+                if ($extractedCount === 0) {
+                    // Fallback: If zip extraction fails or yields 0 files, store it as a regular file
+                    $this->storeUploadedFile($file, $job);
+                    $finalFileCount++;
+                } else {
+                    $finalFileCount += $extractedCount;
+                }
             } else {
                 $this->storeUploadedFile($file, $job);
                 $finalFileCount++;

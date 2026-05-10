@@ -66,7 +66,7 @@ class QuotaService
     // ── Unified check (handles both guest and user) ─────────────────────────────
 
     /**
-     * Returns [allowed: bool, reason: string|null]
+     * Returns [allowed: bool, reason: string|null, upgrade: bool, require_login: bool, redirect_to: string|null]
      */
     public function check(?User $user, ?string $guestToken): array
     {
@@ -75,27 +75,31 @@ class QuotaService
                 $plan = $user->effectivePlan();
                 $limit = $plan?->monthly_analyses ?? 10;
                 return [
-                    'allowed' => false,
-                    'reason'  => "Monthly limit of {$limit} analyses reached. Please upgrade your plan.",
-                    'upgrade' => true,
+                    'allowed'       => false,
+                    'reason'        => "Monthly limit of {$limit} analyses reached. Please upgrade your plan.",
+                    'upgrade'       => true,
+                    'require_login' => false,
+                    'redirect_to'   => '/pricing',
                 ];
             }
-            return ['allowed' => true, 'reason' => null, 'upgrade' => false];
+            return ['allowed' => true, 'reason' => null, 'upgrade' => false, 'require_login' => false, 'redirect_to' => null];
         }
 
         // Guest user
         if (! $guestToken) {
-            return ['allowed' => false, 'reason' => 'Invalid session token.', 'upgrade' => false];
+            return ['allowed' => false, 'reason' => 'Invalid session token.', 'upgrade' => false, 'require_login' => true, 'redirect_to' => '/login'];
         }
 
         if (! $this->guestCanAnalyze($guestToken)) {
             return [
-                'allowed' => false,
-                'reason'  => 'Guest limit of ' . self::GUEST_MAX . ' analyses reached. Please sign in or create a free account.',
-                'upgrade' => false,
+                'allowed'       => false,
+                'reason'        => 'You\'ve used all ' . self::GUEST_MAX . ' free scans. Create a free account to get 10 scans/month.',
+                'upgrade'       => false,
+                'require_login' => true,
+                'redirect_to'   => '/register',
             ];
         }
 
-        return ['allowed' => true, 'reason' => null, 'upgrade' => false];
+        return ['allowed' => true, 'reason' => null, 'upgrade' => false, 'require_login' => false, 'redirect_to' => null];
     }
 }

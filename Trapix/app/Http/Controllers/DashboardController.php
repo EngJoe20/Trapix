@@ -82,7 +82,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $query = AnalysisJob::where('user_id', $user->id)
-            ->with(['report'])
+            ->with(['report', 'files'])
             ->orderByDesc('created_at');
 
         // ── Search ─────────────────────────────────────────────────────────────

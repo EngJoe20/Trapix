@@ -44,11 +44,17 @@ class RunPythonAnalysis implements ShouldQueue
 
         // ── Mark as processing ─────────────────────────────────────────────────
         $job->update(['status' => AnalysisJob::STATUS_PROCESSING, 'started_at' => now()]);
+        \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'processing', 10, 'Initializing malware triage engine...');
 
         // ── Run the bridge ─────────────────────────────────────────────────────
         try {
             $result = $bridge->run($job);
+            
+            \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'processing', 50, 'Python static and behavioral analysis complete...');
+            
             $bridge->persistResult($job, $result);
+            
+            \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'processing', 60, 'Persisting raw insights to database...');
 
             // ── Increment user quota after successful analysis ──────────────────
             if ($job->user_id && $result['success']) {
@@ -60,10 +66,14 @@ class RunPythonAnalysis implements ShouldQueue
                 $quota->incrementGuest($job->guest_token);
             }
             
-            // ── Call AI Expert System if requested ─────────────────────────────
-            $tools = $job->options['tools'] ?? [];
-            if (in_array('ai', $tools) && $result['success']) {
+            // ── Call AI Expert System if explicitly requested ──────────────────
+            // The frontend sends options.ai = true as a boolean (separate from the tools array)
+            $aiRequested = ($job->options['ai'] ?? false) === true
+                        || in_array('ai', $job->options['tools'] ?? []);
+
+            if ($aiRequested && $result['success']) {
                 try {
+                    \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'processing', 75, 'Consulting AI Expert System...');
                     app(\App\Services\AI\AiAnalysisService::class)->run($job);
                 } catch (\Throwable $e) {
                     Log::error('RunPythonAnalysis: AI Expert System failed', [
@@ -73,6 +83,8 @@ class RunPythonAnalysis implements ShouldQueue
                     // We don't fail the whole job if only AI fails
                 }
             }
+
+            \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'completed', 100, 'Analysis completed successfully!');
 
             Log::info('RunPythonAnalysis: Completed', [
                 'job'   => $job->id,
@@ -93,6 +105,8 @@ class RunPythonAnalysis implements ShouldQueue
                 'error_message' => "Error analyzing [{$fileName}]: " . $e->getMessage(),
                 'completed_at'  => now(),
             ]);
+            
+            \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'failed', 0, 'Analysis failed.');
 
             throw $e; // Let the queue retry
         }
@@ -110,5 +124,7 @@ class RunPythonAnalysis implements ShouldQueue
             'error_message' => 'Analysis failed after all retries: ' . $exception->getMessage(),
             'completed_at'  => now(),
         ]);
+        
+        \App\Events\AnalysisProgressUpdated::dispatch($this->jobId, 'failed', 0, 'Analysis failed permanently.');
     }
 }
