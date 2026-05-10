@@ -44,4 +44,20 @@ class AuthenticatedSessionController extends Controller
 
         return redirect('/');
     }
+
+    /**
+     * Quick login for Eng. Mina (Dev Only)
+     */
+    public function loginAsMina(Request $request): RedirectResponse
+    {
+        $user = \App\Models\User::where('email', 'eng.mina@trapix.com')->first();
+        
+        if ($user) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
+        return redirect()->route('login')->with('status', 'Eng. Mina user not found. Please run the seeder.');
+    }
 }

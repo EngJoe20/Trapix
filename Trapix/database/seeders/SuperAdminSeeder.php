@@ -43,5 +43,34 @@ class SuperAdminSeeder extends Seeder
                 'quota_reset_date' => now()->addMonth(),
             ]
         );
+        // 3. Create a Plan for eng.mina (100 requests, AI access)
+        $minaPlan = Plan::updateOrCreate(
+            ['slug' => 'mina-plan'],
+            [
+                'name' => 'Mina Plan',
+                'description' => 'Custom plan for Eng. Mina with 100 requests and AI access.',
+                'monthly_analyses' => 100,
+                'max_upload_bytes' => 1048576 * 100, // 100MB
+                'report_downloads_unlimited' => false,
+                'report_download_limit' => 100,
+                'ai_access' => true,
+                'priority_processing' => false,
+                'price_monthly_cents' => 0,
+                'is_active' => true,
+            ]
+        );
+
+        // 4. Create the eng.mina User
+        User::updateOrCreate(
+            ['email' => 'eng.mina@trapix.com'],
+            [
+                'name' => 'Eng. Mina',
+                'password' => Hash::make('password'), // Simple password
+                'role' => 'user',
+                'plan_id' => $minaPlan->id,
+                'monthly_analysis_used' => 0,
+                'quota_reset_date' => now()->addMonth(),
+            ]
+        );
     }
 }

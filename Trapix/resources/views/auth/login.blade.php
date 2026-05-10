@@ -76,16 +76,21 @@
 
     {{-- ── Dev Quick Login ──────────────────────────────────── --}}
     <div class="mt-6 pt-5 border-t border-glass">
-        <p class="text-[0.70rem] font-medium uppercase tracking-widest text-muted-contrast mb-2">
-            Quick Login (Dev Only)
-        </p>
-        <button
-            type="button"
-            onclick="quickLogin()"
-            class="auth-ghost-btn"
-        >
-            Login as Demo User
-        </button>
+        <div class="flex gap-2">
+            <button
+                type="button"
+                onclick="quickLogin('user@trapix.com')"
+                class="auth-ghost-btn flex-1"
+            >
+                Demo User
+            </button>
+            <a
+                href="{{ route('login.mina') }}"
+                class="auth-ghost-btn flex-1 flex items-center justify-center text-center"
+            >
+                Eng. Mina
+            </a>
+        </div>
     </div>
  
     {{-- ── Sign Up Footer ───────────────────────────────────── --}}
@@ -98,9 +103,10 @@
  
     {{-- ── Dev Script ───────────────────────────────────────── --}}
     <script>
-        function quickLogin() {
-            document.getElementById('email').value    = 'user@trapix.com';
+        function quickLogin(email) {
+            document.getElementById('email').value    = email;
             document.getElementById('password').value = 'password';
+            // Form is intentionally not submitted automatically so the user can review before clicking Log in
         }
     </script>
  
