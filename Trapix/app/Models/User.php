@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(AnalysisJob::class);
     }
 
+    public function aiIntegrations(): HasMany
+    {
+        return $this->hasMany(AiIntegration::class);
+    }
+
     // ── Quota Helpers ──────────────────────────────────────────────────────────
 
     /**

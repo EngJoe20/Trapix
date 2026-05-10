@@ -11,11 +11,13 @@
         ['itemText' => 'FAQ', 'itemLink' => route('docs') . '#faq'],
         ['itemText' => 'Contact Support', 'itemLink' => '#'],
     ];
-    $footerCompany = [
-        ['itemText' => 'About Trapix', 'itemLink' => '#'],
-        ['itemText' => 'Our Mission', 'itemLink' => '#'],
-        ['itemText' => 'Security Blog', 'itemLink' => '#'],
-        ['itemText' => 'Careers', 'itemLink' => '#'],
+    $footerAccount = auth()->check() ? [
+        ['itemText' => 'Dashboard', 'itemLink' => route('dashboard')],
+        ['itemText' => 'Analysis History', 'itemLink' => route('dashboard') . '#history'],
+        ['itemText' => 'AI Integrations', 'itemLink' => route('settings.ai-integrations')],
+    ] : [
+        ['itemText' => 'Login', 'itemLink' => route('login')],
+        ['itemText' => 'Register', 'itemLink' => route('register')],
     ];
     $footerLegal = [
         ['itemText' => 'Privacy Policy', 'itemLink' => '#'],
@@ -94,7 +96,7 @@
 
             {{-- Nav groups --}}
             <x-blocks.group-footer-nav>
-                <x-shared.footer-nav title="Company" :navItems="$footerCompany" />
+                <x-shared.footer-nav title="Account" :navItems="$footerAccount" />
                 <x-shared.footer-nav title="Solutions" :navItems="$footerNav1" />
             </x-blocks.group-footer-nav>
 

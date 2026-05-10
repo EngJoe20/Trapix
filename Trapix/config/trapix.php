@@ -62,16 +62,20 @@ return [
     | Available: openai | claude | gemini | ollama
     */
 
-    'ai_provider'    => env('AI_PROVIDER', 'openai'),
+    'ai_provider'    => env('AI_PROVIDER', 'gemini'),
 
     'openai_api_key' => env('OPENAI_API_KEY'),
     'openai_model'   => env('OPENAI_MODEL', 'gpt-4o-mini'),
 
-    // Future providers (uncomment when implementing adapters)
+    'gemini_api_key'  => env('GEMINI_API_KEY'),
+    'gemini_model'    => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+
+    // Absolute path to the AI Agent Python scripts
+    'ai_agent_path'   => env('AI_AGENT_PATH', base_path('../../AI Agent')),
+
+    // Additional provider stubs (implement adapters to enable)
     // 'claude_api_key'  => env('CLAUDE_API_KEY'),
     // 'claude_model'    => env('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022'),
-    // 'gemini_api_key'  => env('GEMINI_API_KEY'),
-    // 'gemini_model'    => env('GEMINI_MODEL', 'gemini-1.5-pro'),
     // 'ollama_base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
     // 'ollama_model'    => env('OLLAMA_MODEL', 'llama3'),
 

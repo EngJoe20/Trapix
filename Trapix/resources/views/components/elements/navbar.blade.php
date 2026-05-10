@@ -16,27 +16,25 @@
         <nav class="w-full flex justify-between gap-6 relative items-center">
 
             <!-- Logo -->
-                <div class="min-w-max inline-flex relative group">
-                    <a href="/" class="relative flex items-center gap-3">
-                        <div class="relative">
-                            {{-- Animated glow ring behind logo --}}
-                            <div class="absolute inset-0 rounded-xl bg-green-500/20 blur-md animate-pulse"></div>
-                            <img
-                              src="{{ asset('images/logo.png') }}"
-                              alt="Trapix"
-                              class="h-20 w-auto object-contain relative z-10
+            <div class="min-w-max inline-flex relative group">
+                <a href="/" class="relative flex items-center gap-3">
+                    <div class="relative">
+                        {{-- Animated glow ring behind logo --}}
+                        <div class="absolute inset-0 rounded-xl bg-green-500/20 blur-md animate-pulse"></div>
+                        <img src="{{ asset('images/logo.png') }}" alt="Trapix" class="h-20 w-auto object-contain relative z-10
                                      transition-all duration-300
-                                    group-hover:drop-shadow-[0_0_12px_rgba(0,220,0,0.7)]"/>
-                        </div>
-                    </a>
-                </div>
+                                    group-hover:drop-shadow-[0_0_12px_rgba(0,220,0,0.7)]" />
+                    </div>
+                </a>
+            </div>
 
             <!-- Desktop Navigation -->
             <div class="hidden lg:flex items-center gap-8">
                 <ul class="flex gap-6 text-sm font-medium">
                     @foreach ($navItems as $item)
                         <li>
-                            <a href="{{ $item['href'] }}" class="relative text-heading-2 hover:text-primary transition-colors duration-300 group">
+                            <a href="{{ $item['href'] }}"
+                                class="relative text-heading-2 hover:text-primary transition-colors duration-300 group">
                                 {{ $item['text'] }}
                                 <span
                                     class="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
@@ -62,6 +60,19 @@
                     </button>
 
                     @auth
+                        <!-- AI Settings Button (Desktop) -->
+                        <a href="{{ route('settings.ai-integrations') }}" title="AI Integrations"
+                            class="hidden md:inline-flex items-center gap-2 text-heading-2 hover:text-primary transition-colors"
+                            style="margin-right: 0.5rem;">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </a>
+
                         <!-- Dashboard Button (Desktop) -->
                         <a href="{{ url('/dashboard') }}" class="hidden md:inline-flex items-center gap-2 btn-secondary">
                             <span>Dashboard</span>
@@ -70,7 +81,8 @@
                         <!-- Logout Button (Desktop) -->
                         <form method="POST" action="{{ route('logout') }}" class="hidden md:inline-flex">
                             @csrf
-                            <button type="submit" class="inline-flex items-center gap-2 btn-primary !from-red-600 !to-red-500">
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 btn-primary !from-red-600 !to-red-500">
                                 <span>Logout</span>
                             </button>
                         </form>
@@ -99,7 +111,8 @@
             <!-- Mobile Actions (visible on mobile only) -->
             <div class="lg:hidden flex items-center gap-3">
                 <!-- Mobile Scan Button (small) -->
-                <a href="#cta" class="inline-flex items-center gap-1 btn-primary !px-3 !py-2 !text-xs">
+                <a href="{{ route('analyze') }}"
+                    class="inline-flex items-center gap-1 btn-primary !px-3 !py-2 !text-xs">
                     <span>Scan</span>
                 </a>
 
@@ -121,14 +134,14 @@
                 <!-- Hamburger Menu -->
                 <button data-toggle-nav data-open-nav="false"
                     class="lg:hidden outline-none relative w-10 h-10 flex flex-col items-center justify-center
-                               bg-cyan-900/30 border border-cyan-500/30 rounded-lg hover:border-cyan-400 transition-colors">
+                               bg-green-900/30 border border-green-500/30 rounded-lg hover:border-green-400 transition-colors">
 
                     <span id="line1"
-                        class="w-6 h-0.5 rounded-full bg-cyan-400 transition-all duration-300 ease-linear mb-1.5"></span>
+                        class="w-6 h-0.5 rounded-full bg-green-400 transition-all duration-300 ease-linear mb-1.5"></span>
                     <span id="line2"
-                        class="w-6 h-0.5 rounded-full bg-cyan-400 transition-all duration-300 ease-linear mb-1.5"></span>
+                        class="w-6 h-0.5 rounded-full bg-green-400 transition-all duration-300 ease-linear mb-1.5"></span>
                     <span id="line3"
-                        class="w-6 h-0.5 rounded-full bg-cyan-400 transition-all duration-300 ease-linear"></span>
+                        class="w-6 h-0.5 rounded-full bg-green-400 transition-all duration-300 ease-linear"></span>
 
                     <span class="sr-only">toggle nav</span>
                 </button>
@@ -143,7 +156,7 @@
         <div data-navbar class="flex h-0 overflow-hidden lg:hidden duration-300 ease-linear
                     flex-col gap-y-6 gap-x-4 w-full
                     absolute top-full left-0 bg-bg/98 backdrop-blur-xl
-                    border-x border-x-box-border border-t border-t-cyan-900/30 z-50">
+                    border-x border-x-box-border border-t border-t-green-900/30 z-50">
 
             <!-- Mobile Nav Links -->
             <ul class="border-t border-box-border px-6 pt-6
@@ -160,10 +173,17 @@
                 @endforeach
 
                 @auth
-                    <!-- Mobile Dashboard -->
+                    <!-- Mobile Dashboard & Settings -->
                     <li class="pt-2 border-t border-box-border mt-2">
-                        <a href="{{ url('/dashboard') }}" class="flex items-center gap-2 py-2 text-heading-2 hover:text-primary transition-colors">
+                        <a href="{{ url('/dashboard') }}"
+                            class="flex items-center gap-2 py-2 text-heading-2 hover:text-primary transition-colors">
                             Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('settings.ai-integrations') }}"
+                            class="flex items-center gap-2 py-2 text-heading-2 hover:text-primary transition-colors">
+                            AI Integrations
                         </a>
                     </li>
                     <li>
@@ -177,7 +197,8 @@
                 @else
                     <!-- Mobile Login/Register -->
                     <li class="pt-2 border-t border-box-border mt-2">
-                        <a href="{{ route('login') }}" class="flex items-center gap-2 py-2 text-heading-2 hover:text-primary transition-colors">
+                        <a href="{{ route('login') }}"
+                            class="flex items-center gap-2 py-2 text-heading-2 hover:text-primary transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -198,10 +219,9 @@
             </ul>
 
             <!-- Mobile CTA -->
-            <div
-                class="flex items-center sm:w-max w-full pb-6 border-b border-box-bg px-6">
-                <x-shared.btn-link text="Get Started" href="#cta" className="flex justify-center w-full sm:w-max"
-                    variant="primary" />
+            <div class="flex items-center sm:w-max w-full pb-6 border-b border-box-bg px-6">
+                <x-shared.btn-link text="Get Started" href="{{ route('analyze') }}"
+                    className="flex justify-center w-full sm:w-max" variant="primary" />
             </div>
         </div>
 
