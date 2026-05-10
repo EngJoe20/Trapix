@@ -8,6 +8,7 @@ use App\Models\ReportDownload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * ReportController
@@ -59,15 +60,66 @@ class ReportController extends Controller
         $report->increment('download_count');
 
         // ── Stream PDF ─────────────────────────────────────────────────────────
-        $fullPath = Storage::disk($report->disk ?? 'local')->path($report->pdf_path);
+        $pdf = Pdf::loadView('pdf.report', compact('job'));
+        return $pdf->download("trapix_report_{$jobId}.pdf");
+    }
 
-        abort_unless(file_exists($fullPath), 404, 'Report file missing.');
+    /**
+     * GET /analysis/{jobId}/export-zip
+     * Generate a ZIP archive containing the PDF, JSON results, and IOCs.
+     */
+    public function exportZip(Request $request, string $jobId)
+    {
+        $job = AnalysisJob::with(['report', 'aiResponse', 'files'])->findOrFail($jobId);
 
-        return response()->download(
-            $fullPath,
-            "trapix_report_{$jobId}.pdf",
-            ['Content-Type' => 'application/pdf']
-        );
+        $this->authorizeAccess($job, Auth::user(), $request);
+
+        $zip = new \ZipArchive();
+        $zipFileName = "trapix_export_{$jobId}.zip";
+        $zipPath = storage_path("app/private/{$zipFileName}");
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+            // 1. PDF Report
+            $pdf = Pdf::loadView('pdf.report', compact('job'));
+            $zip->addFromString('report.pdf', $pdf->output());
+
+            // 2. Raw JSON Results
+            $zip->addFromString('raw_analysis.json', json_encode($job->result, JSON_PRETTY_PRINT));
+
+            // 3. AI Insights
+            if ($job->aiResponse) {
+                $zip->addFromString('ai_insights.json', json_encode($job->aiResponse->toArray(), JSON_PRETTY_PRINT));
+            }
+
+            // 4. IOCs text file
+            $iocsText = "Extracted IOCs\n==============\n\n";
+            $results = $job->result ?? [];
+            if (isset($results['results'])) {
+                $results = $results['results'][0] ?? [];
+            }
+            if (isset($results['iocs'])) {
+                foreach ($results['iocs'] as $type => $items) {
+                    $iocsText .= strtoupper($type) . ":\n";
+                    if (is_array($items)) {
+                        foreach ($items as $item) {
+                            $iocsText .= "- " . $item . "\n";
+                        }
+                    } else {
+                        $iocsText .= "- " . $items . "\n";
+                    }
+                    $iocsText .= "\n";
+                }
+            } else {
+                $iocsText .= "No IOCs found.\n";
+            }
+            $zip->addFromString('iocs.txt', $iocsText);
+
+            $zip->close();
+        } else {
+            abort(500, 'Failed to create ZIP archive.');
+        }
+
+        return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
