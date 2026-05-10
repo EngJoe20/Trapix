@@ -16,24 +16,20 @@
         <nav class="w-full flex justify-between gap-6 relative items-center">
 
             <!-- Logo -->
-            <div class="min-w-max inline-flex relative group">
-                <a href="/" class="relative flex items-center gap-3">
-                    <div class="relative w-10 h-10 overflow-hidden flex items-center justify-center">
-                        <div
-                            class="absolute inset-0 rounded-lg bg-primary/10 blur-sm dark:bg-gradient-to-br dark:from-cyan-500/20 dark:to-emerald-500/20">
+                <div class="min-w-max inline-flex relative group">
+                    <a href="/" class="relative flex items-center gap-3">
+                        <div class="relative">
+                            {{-- Animated glow ring behind logo --}}
+                            <div class="absolute inset-0 rounded-xl bg-green-500/20 blur-md animate-pulse"></div>
+                            <img
+                              src="{{ asset('images/logo.png') }}"
+                              alt="Trapix"
+                              class="h-20 w-auto object-contain relative z-10
+                                     transition-all duration-300
+                                    group-hover:drop-shadow-[0_0_12px_rgba(0,220,0,0.7)]"/>
                         </div>
-                        <svg class="w-6 h-6 text-primary dark:text-cyan-400 relative z-10"
-                            fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
-                        </svg>
-                        <div class="absolute inset-0 rounded-lg border border-primary/20 dark:border-cyan-400/30 animate-pulse"></div>
-                    </div>
-                    <div class="inline-flex text-lg font-bold tracking-wider text-heading-1">
-                        TRAPIX
-                    </div>
-                </a>
-            </div>
+                    </a>
+                </div>
 
             <!-- Desktop Navigation -->
             <div class="hidden lg:flex items-center gap-8">

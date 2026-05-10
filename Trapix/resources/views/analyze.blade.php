@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Scanner - Trapix Security Analyzer')
+@section('title', 'Scanner | Trapix')
 
 @section('content')
 <section class="relative min-h-[90vh] py-12 px-6 overflow-hidden">

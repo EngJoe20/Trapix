@@ -10,7 +10,7 @@
 
     <meta name="description" content="Trapix - Advanced Malware & File Security Analysis Platform">
 
-    <link rel="icon" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" href="{{ asset('images/logo.png') }}">
 
     <!-- Terminal/Coding Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

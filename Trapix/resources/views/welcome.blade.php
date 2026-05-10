@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Trapix - Advanced Security Analyzer')
+@section('title', 'Home | Trapix')
 
 @section('content')
 <!-- Hero Section with Terminal Aesthetic -->
@@ -23,7 +23,7 @@
         <div class="text-center mb-12 fade-in-up stagger-delay-1">
             <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                 <span class="text-heading-1">TRAPIX</span><br>
-                <span class="typewriter-text typing-cursor text-primary dark:text-cyan-400 neon-text font-bold"
+                <span class="typewriter-text typing-cursor text-primary dark:text-green-accent-400 neon-text font-bold"
                       style="display: inline-block; overflow: hidden; white-space: nowrap;">
                     Security Analyzer
                 </span>
@@ -31,7 +31,7 @@
 
             <p class="text-lg md:text-xl text-body max-w-2xl mx-auto leading-relaxed">
                 Upload any file for instant malware detection, behavior analysis & AI-powered risk scoring.
-                <span class="text-primary dark:text-cyan-400 font-semibold">Enterprise-grade security</span> in one click.
+                <span class="text-primary dark:text-green-accent-400 font-semibold">Enterprise-grade security</span> in one click.
             </p>
         </div>
 

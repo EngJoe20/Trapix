@@ -4,7 +4,8 @@ import forms from '@tailwindcss/forms'
 export default {
   content: [
     './resources/views/**/*.blade.php',
-    './resources/js/**/*.js'
+    './resources/js/**/*.js',
+    './resources/**/*.blade.php',  // catches any components in subdirectories
   ],
   darkMode: 'class',
   theme: {
@@ -17,7 +18,8 @@ export default {
         'midmd': '880px',
       },
       colors: {
-        primary: '#1d4ed8',
+        primary: '#00e200',        // ← fixed: was blue #1d4ed8, now Trapix green
+        'green-accent': '#00e200', // kept for auth pages
         bg: 'rgb(var(--color-bg))',
         box: {
           bg: 'rgb(var(--color-box) / <alpha-value>)',

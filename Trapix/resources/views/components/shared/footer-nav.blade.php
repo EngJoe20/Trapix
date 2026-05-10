@@ -15,12 +15,12 @@
 
             <li>
                 <a href="{{ $navItem['itemLink'] }}"
-                   class="text-gray-400 hover:text-cyan-400 transition-colors duration-200 relative inline-block">
+                   class="text-gray-400 hover:text-green-400 transition-colors duration-200 relative inline-block group">
 
                     {{ $navItem['itemText'] }}
 
                     <!-- Underline animation -->
-                    <span class="absolute -bottom-0.5 left-0 w-0 h-0.5 bg-cyan-400 transition-all duration-300 group-hover:w-full"></span>
+                    <span class="absolute -bottom-0.5 left-0 w-0 h-0.5 bg-green-400 transition-all duration-300 group-hover:w-full"></span>
 
                 </a>
             </li>
