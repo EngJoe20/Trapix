@@ -60,22 +60,30 @@ class AnalysisController extends Controller
                     'reason'  => $quota['reason'],
                 ]);
                 return response()->json([
-                    'error'   => $quota['reason'],
-                    'upgrade' => $quota['upgrade'],
+                    'error'         => $quota['reason'],
+                    'upgrade'       => $quota['upgrade'],
+                    'require_login' => $quota['require_login'] ?? false,
+                    'redirect_to'   => $quota['redirect_to'] ?? null,
                 ], 429);
             }
 
             // ── Create the job ─────────────────────────────────────────────────────
-            $files   = $request->file('files'); // array
-            $options = $request->only(['skip_vt', 'vt_api_key', 'options']);
-            
-            if (isset($options['options']) && is_string($options['options'])) {
-                $decodedOptions = json_decode($options['options'], true);
-                if (is_array($decodedOptions)) {
-                    $options = array_merge($options, $decodedOptions);
-                }
-                unset($options['options']);
-            }
+            $files     = $request->file('files'); // array
+            $skipVt    = (bool) $request->input('skip_vt', false);
+            $vtApiKey  = $request->input('vt_api_key');
+
+            // Decode the 'options' JSON blob from the frontend
+            $rawOptions = $request->input('options');
+            $decoded = is_string($rawOptions) ? (json_decode($rawOptions, true) ?? []) : ($rawOptions ?? []);
+
+            // Build clean options structure: preserve nested keys
+            $options = [
+                'skip_vt'         => $skipVt,
+                'vt_api_key'      => $vtApiKey,
+                'tools'           => $decoded['tools'] ?? [],
+                'hash_algorithms' => $decoded['hash_algorithms'] ?? [],
+                'ai'              => (bool) ($decoded['ai'] ?? false),
+            ];
 
             $job = $this->analysisService->createJob(
                 files: $files,
@@ -171,6 +179,32 @@ class AnalysisController extends Controller
                 'sha256' => $f->sha256,
             ]),
         ]);
+    }
+
+    /**
+     * POST /api/analysis/{jobId}/run-ai
+     * Trigger AI analysis on-demand for a completed job.
+     */
+    public function runAi(Request $request, string $jobId): JsonResponse
+    {
+        $job = \App\Models\AnalysisJob::findOrFail($jobId);
+        $this->authorizeJobAccess($job);
+
+        if (! $job->isCompleted() || ! $job->result) {
+            return response()->json(['error' => 'Job must be completed successfully first.'], 400);
+        }
+
+        try {
+            $aiResponse = app(\App\Services\AI\AiAnalysisService::class)->run($job);
+            
+            return response()->json([
+                'success'  => true,
+                'insights' => $aiResponse->insights,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('On-demand AI Analysis failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'AI analysis failed: ' . $e->getMessage()], 500);
+        }
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
