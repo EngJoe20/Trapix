@@ -47,7 +47,35 @@
         </div>
 
         {{-- ── Main Content ── --}}
-        <div x-show="!loading && !error">
+        <div x-show="!loading && !error" class="flex flex-col lg:flex-row gap-6">
+            
+            {{-- ── File Selector (Sidebar) ── --}}
+            <template x-if="allResults.length > 1">
+                <div class="lg:w-72 shrink-0 space-y-4">
+                    <h3 class="text-xs font-bold text-body uppercase tracking-widest px-2">Analyzed Files</h3>
+                    <div class="glass-panel max-h-[600px] overflow-y-auto">
+                        <template x-for="(res, idx) in allResults" :key="idx">
+                            <button @click="currentFileIndex = idx; result = res" 
+                                    class="w-full text-left p-4 border-b border-box-border/30 hover:bg-white/5 transition-colors group"
+                                    :class="currentFileIndex === idx ? 'bg-green-500/10 border-l-2 border-l-green-400' : ''">
+                                <div class="flex justify-between items-start gap-2">
+                                    <span class="text-sm font-semibold text-heading-2 truncate" :class="currentFileIndex === idx ? 'text-green-400' : ''" x-text="res.file_name"></span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold shrink-0" 
+                                          :class="{
+                                              'bg-red-500/20 text-red-400': res.risk_level === 'CRITICAL' || res.risk_level === 'HIGH',
+                                              'bg-amber-500/20 text-amber-400': res.risk_level === 'MEDIUM',
+                                              'bg-blue-500/20 text-blue-400': res.risk_level === 'LOW',
+                                              'bg-gray-500/20 text-gray-400': !res.risk_level || res.risk_level === 'Unknown'
+                                          }" x-text="res.risk_level || '??'"></span>
+                                </div>
+                                <p class="text-[10px] text-body mt-1 truncate" x-text="res.file_type"></p>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <div class="flex-grow">
 
             {{-- ── Overview Cards ── --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -62,8 +90,9 @@
                 </div>
                 <div class="glass-card p-4">
                     <p class="text-xs text-body uppercase tracking-wider mb-1">VT Detection</p>
-                    <p class="text-sm font-bold" :class="vtColor" x-text="result?.virustotal?.detection_ratio || 'N/A'"></p>
-                    <p class="text-xs text-body mt-1" x-text="result?.virustotal?.threat_label || ''"></p>
+                    <p class="text-sm font-bold" :class="vtColor" 
+                       x-text="result?.virustotal?.found ? result.virustotal.detection_ratio : (result?.virustotal?.queried ? 'Not Found' : 'Skipped')"></p>
+                    <p class="text-xs text-body mt-1" x-text="result?.virustotal?.threat_label || result?.virustotal?.error || ''"></p>
                 </div>
                 <div class="glass-card p-4">
                     <p class="text-xs text-body uppercase tracking-wider mb-1">Analysis Time</p>
@@ -99,6 +128,20 @@
                                 </div>
                             </template>
                         </div>
+
+                        <template x-if="result?.virustotal?.raw_stats && Object.keys(result.virustotal.raw_stats).length > 0">
+                            <div class="mt-8">
+                                <h3 class="text-sm font-bold text-heading-2 uppercase tracking-wider mb-4">VirusTotal Engine Stats</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <template x-for="[stat, count] in Object.entries(result.virustotal.raw_stats)" :key="stat">
+                                        <div class="p-3 rounded-lg bg-black/20 border border-box-border/20">
+                                            <p class="text-[10px] text-body uppercase tracking-widest mb-1" x-text="stat"></p>
+                                            <p class="text-sm font-bold" :class="count > 0 ? (stat === 'malicious' ? 'text-red-400' : 'text-amber-400') : 'text-heading-3'" x-text="count"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Tab 1: PE Info --}}
@@ -369,6 +412,17 @@
                         @endauth
                     </div>
 
+                    {{-- Tab 7: Technical View (Raw JSON) --}}
+                    <div x-show="activeTab === 7">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-bold text-heading-2 uppercase tracking-wider">Raw Analysis Payload</h3>
+                            <button @click="navigator.clipboard.writeText(JSON.stringify(result, null, 2)); collabMessage = 'JSON copied to clipboard!'" class="text-xs text-green-400 hover:underline">Copy JSON</button>
+                        </div>
+                        <div class="bg-black/40 rounded-lg border border-box-border/30 p-4 font-mono text-[11px] text-emerald-400/80 overflow-auto max-h-[600px]">
+                            <pre x-text="JSON.stringify(result, null, 4)"></pre>
+                        </div>
+                    </div>
+
                 </div>{{-- /p-6 --}}
             </div>{{-- /glass-panel --}}
         </div>{{-- /main content --}}
@@ -383,6 +437,8 @@ document.addEventListener('alpine:init', () => {
         loading: true,
         error: null,
         result: null,
+        allResults: [],
+        currentFileIndex: 0,
         aiData: null,
         activeTab: 0,
         riskLevel: '—',
@@ -405,6 +461,7 @@ document.addEventListener('alpine:init', () => {
                 { label: 'Strings',        count: this.result?.strings?.total || null },
                 { label: 'Entropy',        count: Object.keys(this.result?.entropy?.section_entropies||{}).length || null },
                 { label: 'Collaboration',  count: this.tags?.length || null },
+                { label: 'Technical View', count: null },
             ];
         },
 
@@ -438,7 +495,26 @@ document.addEventListener('alpine:init', () => {
 
                 // The result may be wrapped in a 'results' array (bridge.py format)
                 const raw = data.result || {};
-                this.result = raw.results?.[0] || raw;
+                
+                if (raw.results && Array.isArray(raw.results)) {
+                    this.allResults = raw.results;
+                    
+                    // Try to find the most "interesting" file to show first (e.g. .exe, .dll, or highest risk)
+                    let bestIdx = 0;
+                    for (let i = 0; i < this.allResults.length; i++) {
+                        const r = this.allResults[i];
+                        const name = (r.file_name || "").toLowerCase();
+                        if (name.endsWith(".exe") || name.endsWith(".dll") || r.risk_level === 'CRITICAL' || r.risk_level === 'HIGH') {
+                            bestIdx = i;
+                            break;
+                        }
+                    }
+                    this.currentFileIndex = bestIdx;
+                    this.result = this.allResults[bestIdx];
+                } else {
+                    this.result = raw;
+                    this.allResults = [raw];
+                }
 
                 // AI data from aiResponse relation
                 @if($job->aiResponse)

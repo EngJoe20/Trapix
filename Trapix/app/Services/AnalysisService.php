@@ -91,8 +91,10 @@ class AnalysisService
     {
         $mime = $file->getMimeType();
         $ext  = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($mime, ['application/zip', 'application/x-zip-compressed']) || $ext === 'zip';
         
-        return in_array($mime, ['application/zip', 'application/x-zip-compressed']) || $ext === 'zip';
+        Log::info("Checking if file is ZIP", ['filename' => $file->getClientOriginalName(), 'mime' => $mime, 'ext' => $ext, 'is_zip' => $isZip]);
+        return $isZip;
     }
 
     /**
@@ -100,6 +102,7 @@ class AnalysisService
      */
     private function extractAndStoreZip(HttpUploadedFile $zipFile, AnalysisJob $job): int
     {
+        Log::info("Attempting to extract ZIP", ['job_id' => $job->id, 'path' => $zipFile->getRealPath()]);
         if (!class_exists('\ZipArchive')) {
             Log::error('ZipArchive extension is not installed.');
             return 0;
@@ -116,64 +119,46 @@ class AnalysisService
             mkdir($extractPath, 0755, true);
         }
 
-        Log::info("Extracting ZIP to: {$extractPath}");
+        Log::info("Extracting ZIP entries to: {$extractPath}");
         
-        if (!$zip->extractTo($extractPath)) {
-            Log::error("Failed to extract ZIP", ['job_id' => $job->id]);
-            $zip->close();
-            return 0;
-        }
-        $zip->close();
-
-        $filesCount = 0;
-        $allFiles   = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS)
-        );
-
-        foreach ($allFiles as $file) {
-            if ($file->isDir()) continue;
-
-            $filename = $file->getFilename();
-            $pathname = $file->getPathname();
+        $extractedCount = 0;
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $filename = $zip->getNameIndex($i);
             
-            // Skip system/internal files
-            if (str_starts_with($filename, '.') || str_contains($pathname, '__MACOSX')) {
+            // Skip directories and system files
+            if (str_ends_with($filename, '/') || str_starts_with($filename, '.') || str_contains($filename, '__MACOSX')) {
                 continue;
             }
 
-            $extension  = $file->getExtension();
+            $extension = pathinfo($filename, PATHINFO_EXTENSION);
             $storedName = Str::uuid() . ($extension ? '.' . $extension : '');
             $destPath   = "jobs/{$job->id}/{$storedName}";
 
-            $content = file_get_contents($file->getRealPath());
+            $content = $zip->getFromIndex($i);
             if ($content === false) {
-                Log::error("Failed to read extracted file: {$file->getRealPath()}");
+                Log::error("Failed to read ZIP entry: {$filename}");
                 continue;
             }
 
             Storage::disk('local')->put($destPath, $content);
-            $fullDestPath = Storage::disk('local')->path($destPath);
-
-            Log::info("Stored file: {$filename} -> {$destPath} (Size: " . strlen($content) . " bytes)");
-
+            
             UploadedFile::create([
                 'analysis_job_id' => $job->id,
-                'original_name'   => $filename,
+                'original_name'   => basename($filename),
                 'stored_name'     => $storedName,
-                'disk'            => 'local',
                 'path'            => $destPath,
-                'mime_type'       => \Illuminate\Support\Facades\File::mimeType($fullDestPath) ?? 'application/octet-stream',
-                'size_bytes'      => strlen($content),
-                'sha256'          => hash('sha256', $content),
+                'size'            => strlen($content),
+                'mime_type'       => null, // Will be determined by Python
             ]);
 
-            $filesCount++;
+            $extractedCount++;
         }
+        $zip->close();
 
         // Cleanup temp extraction folder
         \Illuminate\Support\Facades\File::deleteDirectory($extractPath);
 
-        return $filesCount;
+        return $extractedCount;
     }
 
     /**

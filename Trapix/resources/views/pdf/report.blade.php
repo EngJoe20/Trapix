@@ -212,19 +212,29 @@
     @if(isset($results['virustotal']))
         <h2>VirusTotal</h2>
         <table>
-            <tr>
-                <th>Detection Ratio</th>
-                <td>{{ $results['virustotal']['detection_ratio'] ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Verdict</th>
-                <td>{{ $results['virustotal']['verdict'] ?? 'N/A' }}</td>
-            </tr>
-            @if(isset($results['virustotal']['scan_date']))
+            @if(!($results['virustotal']['queried'] ?? false))
                 <tr>
-                    <th>Scan Date</th>
-                    <td>{{ $results['virustotal']['scan_date'] }}</td>
+                    <td colspan="2" style="color: #c05621;">{{ $results['virustotal']['error'] ?? 'VirusTotal query was skipped or API key is missing.' }}</td>
                 </tr>
+            @elseif(!($results['virustotal']['found'] ?? false))
+                <tr>
+                    <td colspan="2" style="color: #2b6cb0;">File hash not found in VirusTotal database (Never scanned before).</td>
+                </tr>
+            @else
+                <tr>
+                    <th>Detection Ratio</th>
+                    <td>{{ $results['virustotal']['detection_ratio'] ?? '0/0' }}</td>
+                </tr>
+                <tr>
+                    <th>Verdict</th>
+                    <td>{{ $results['virustotal']['threat_label'] ?? ($results['virustotal']['verdict'] ?? 'N/A') }}</td>
+                </tr>
+                @if(isset($results['virustotal']['scan_date']))
+                    <tr>
+                        <th>Scan Date</th>
+                        <td>{{ $results['virustotal']['scan_date'] }}</td>
+                    </tr>
+                @endif
             @endif
         </table>
     @endif
