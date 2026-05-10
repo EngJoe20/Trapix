@@ -601,13 +601,13 @@ class StaticAnalyzer:
         if score >= 100:
             return "CRITICAL"
         elif score >= 80:
-            return "HIGH RISK"
+            return "HIGH"
         elif score >= 50:
             return "SUSPICIOUS"
         elif score >= 20:
-            return "LOW RISK"
+            return "LOW"
         else:
-            return "CLEAN - SAFE"
+            return "CLEAN"
 
 
 def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> str:
@@ -651,9 +651,9 @@ def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> st
             and api_count >= 8
             and is_packed
         ):
-            return "SUSPICIOUS جرب مش هتندم"
+            return "SUSPICIOUS"
 
-        return "CLEAN امان يا حجازي"
+        return "CLEAN"
 
     if (
 
@@ -661,7 +661,7 @@ def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> st
         or (detection_ratio >= 0.4 and is_packed and score >= 100)
         
     ):
-        return "CRITICAL واعر جوي يا ابوي"
+        return "CRITICAL"
 
 
     if (
@@ -670,7 +670,7 @@ def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> st
         or api_count >= 5
         or (is_packed and api_count >= 3)
     ):
-        return "HIGH RISK خطيير"
+        return "HIGH"
 
 
     if (
@@ -679,7 +679,7 @@ def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> st
         or (is_packed and ioc_count > 5)
         or api_count >= 2
     ):
-        return "SUSPICIOUS جرب مش هتندم"
+        return "SUSPICIOUS"
 
 
     if (
@@ -688,6 +688,6 @@ def categorize_risk(result: StaticAnalysisResult, vt2: dict, packer: dict) -> st
         or ioc_count > 0
         or score >= 20
     ):
-        return "LOW RISK خد فكرة و مش هتندم"
+        return "LOW"
 
-    return "CLEAN امان يا حجازي"
+    return "CLEAN"

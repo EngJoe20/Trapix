@@ -111,11 +111,28 @@ def main() -> int:
     vt_key  = args.vt_key or overrides.get("vt_api_key") or VT_API_KEY
     skip_vt = args.no_vt or overrides.get("skip_vt", False)
 
+    # ── Resolve tool selection from the analysis_request.json options ──────────
+    job_options     = overrides.get("options", {})
+    selected_tools  = job_options.get("tools", [])        # e.g. ["hashes","vt","pe_info"]
+    hash_algorithms = job_options.get("hash_algorithms", [])  # e.g. ["sha256","md5"]
+
+    # If no tools selected → run everything (default)
+    if not selected_tools:
+        selected_tools = None   # None = all tools
+    if not hash_algorithms:
+        hash_algorithms = None  # None = all algorithms
+
+    # Skip VT if 'vt' not in selected tools
+    if selected_tools and "vt" not in selected_tools:
+        skip_vt = True
+
     # ── Build analyzer ─────────────────────────────────────────────────────────
     analyzer = FileAnalyzer(
-        vt_api_key  = vt_key,
-        export_json = False,   # We handle JSON output ourselves
-        skip_vt     = skip_vt,
+        vt_api_key      = vt_key,
+        export_json     = False,   # We handle JSON output ourselves
+        skip_vt         = skip_vt,
+        selected_tools  = selected_tools,
+        hash_algorithms = hash_algorithms,
     )
 
     try:

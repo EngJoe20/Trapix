@@ -35,6 +35,8 @@ class ColoredFormatter(logging.Formatter):
         return f"[{time_str}] {level} {name}: {msg}"
 
 
+_shared_log_path = None
+
 def get_logger(name: str, log_dir: str | None = None) -> logging.Logger:
     """
     Create or retrieve a logger with a specific name.
@@ -46,6 +48,8 @@ def get_logger(name: str, log_dir: str | None = None) -> logging.Logger:
     Returns:
         Ready-to-use Logger object
     """
+    global _shared_log_path
+    
     logger = logging.getLogger(name)
 
     # Avoid adding duplicate handlers when function is called multiple times
@@ -61,12 +65,14 @@ def get_logger(name: str, log_dir: str | None = None) -> logging.Logger:
     logger.addHandler(console_handler)
 
     # ─── File Handler ────────────────────────────────────────────
-    if log_dir:
+    # If log_dir is provided and no shared path exists, create one
+    if log_dir and not _shared_log_path:
         os.makedirs(log_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_path  = os.path.join(log_dir, f"triage_{timestamp}.log")
+        _shared_log_path = os.path.join(log_dir, f"triage_{timestamp}.log")
 
-        file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    if _shared_log_path:
+        file_handler = logging.FileHandler(_shared_log_path, encoding="utf-8")
         file_handler.setLevel(logging.DEBUG)
         # Log file without ANSI colors for easy reading
         file_formatter = logging.Formatter(

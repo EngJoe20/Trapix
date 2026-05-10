@@ -60,17 +60,29 @@ class FileAnalyzer:
     - Not packed → Full static analysis
     """
 
+    # Canonical tool key names (must match what the frontend sends)
+    ALL_TOOLS = {
+        "hashes", "file_info", "vt", "packer", "upx", "entropy",
+        "pe_info", "imports", "exports", "suspicious_apis",
+        "ioc", "strings", "risk_score",
+    }
+    ALL_HASH_ALGORITHMS = {"sha256", "sha1", "md5"}
+
     def __init__(
         self,
         vt_api_key: str | None = None,
         export_json: bool = True,
         skip_vt: bool = False,
+        selected_tools: list | None = None,
+        hash_algorithms: list | None = None,
     ):
         """
         Parameters:
-            vt_api_key  : API key for VirusTotal (uses config.py if not specified)
-            export_json : Whether to export JSON report automatically?
-            skip_vt     : Skip VT query (for testing without internet)
+            vt_api_key      : API key for VirusTotal (uses config.py if not specified)
+            export_json     : Whether to export JSON report automatically?
+            skip_vt         : Skip VT query (for testing without internet)
+            selected_tools  : List of tool keys to run (None = all tools)
+            hash_algorithms : List of hash algorithms to compute (None = all)
         """
         self.packer_detector  = PackerDetector()
         self.static_analyzer  = StaticAnalyzer()
@@ -79,6 +91,23 @@ class FileAnalyzer:
         self.vt_client        = VirusTotalClient(api_key=vt_api_key) if vt_api_key else VirusTotalClient()
         self.export_json      = export_json
         self.skip_vt          = skip_vt
+
+        # Resolve selected tools — None means "run everything"
+        self._tools = (
+            self.ALL_TOOLS
+            if selected_tools is None
+            else {t.lower() for t in selected_tools} & self.ALL_TOOLS
+        )
+        # Resolve hash algorithms — None means "compute all three"
+        self._hash_algos = (
+            self.ALL_HASH_ALGORITHMS
+            if hash_algorithms is None
+            else {h.lower() for h in hash_algorithms} & self.ALL_HASH_ALGORITHMS
+        )
+
+    def _tool_enabled(self, key: str) -> bool:
+        """Return True if the given tool key is in the active tool set."""
+        return key in self._tools
 
     def analyze_file(self, filepath: str | Path) -> dict:
         """
@@ -132,21 +161,40 @@ class FileAnalyzer:
         if not self._validate_file(filepath, analysis):
             return analysis
 
-        # ─── Stage 1: Calculate hashes ────────────────────────────────────────
-        logger.info("🔑 [1/5] Calculating hashes...")
-        try:
-            analysis["hashes"]    = get_all_hashes(filepath)
-            analysis["file_size"] = file_size_human(filepath)
-            analysis["file_type"] = _get_file_type(filepath)
-            logger.info(f"  SHA-256: {analysis['hashes']['sha256']}")
-        except Exception as e:
-            logger.error(f"❌ Failed to calculate hashes: {e}")
+        # ─── Stage 1: Hashes & File Info ──────────────────────────────────────
+        if self._tool_enabled("hashes") or self._tool_enabled("file_info") or self._tool_enabled("vt"):
+            logger.info("🔑 [1/5] Calculating hashes and file info...")
+            try:
+                all_hashes = get_all_hashes(filepath)
+                
+                # If hashes tool is enabled, filter to requested algos
+                if self._tool_enabled("hashes"):
+                    analysis["hashes"] = {
+                        algo: val for algo, val in all_hashes.items()
+                        if algo in self._hash_algos
+                    }
+                
+                # CRITICAL: Always include sha256 if VT is enabled (even if 'hashes' tool is off or doesn't include it)
+                if self._tool_enabled("vt") and "sha256" not in analysis["hashes"]:
+                    analysis["hashes"]["sha256"] = all_hashes.get("sha256")
 
-        # ─── Stage 2: Query VirusTotal ───────────────────────────────
+                if self._tool_enabled("file_info"):
+                    analysis["file_size"] = file_size_human(filepath)
+                    analysis["file_type"] = _get_file_type(filepath)
+                
+                logger.info(f"  SHA-256: {analysis['hashes'].get('sha256', 'N/A')}")
+            except Exception as e:
+                logger.error(f"❌ Failed to calculate hashes: {e}")
+        else:
+            logger.info("⏭️  [1/5] Hashes / file info skipped by tool selection")
+
+        # ─── Stage 2: Query VirusTotal ────────────────────────────────────────
         vt_result = None
-        if not self.skip_vt and analysis["hashes"].get("sha256"):
+        sha256_for_vt = analysis["hashes"].get("sha256")
+
+        if self._tool_enabled("vt") and not self.skip_vt and sha256_for_vt:
             logger.info("🌐 [2/5] Querying VirusTotal...")
-            vt_result = self.vt_client.query_hash(analysis["hashes"]["sha256"])
+            vt_result = self.vt_client.query_hash(sha256_for_vt)
             analysis["virustotal"] = {
                 "queried":         vt_result.queried,
                 "found":           vt_result.found,
@@ -160,47 +208,47 @@ class FileAnalyzer:
             }
         else:
             logger.info("⏭️  [2/5] Skipping VirusTotal")
-            # Create a dummy clean result if skipping or not found
             from core.vt_client import VTResult
             vt_result = VTResult()
 
-        # ─── Stage 3: Packer detection ──────────────────────────────────────────
-        logger.info("🔍 [3/5] Packer and entropy detection...")
-        packer_result = self.packer_detector.detect(filepath)
+        # ─── Stage 3: Packer detection ────────────────────────────────────────
+        packer_result = None
+        if self._tool_enabled("packer") or self._tool_enabled("upx") or self._tool_enabled("entropy"):
+            logger.info("🔍 [3/5] Packer and entropy detection...")
+            packer_result = self.packer_detector.detect(filepath)
 
-        analysis["packer"] = {
-            "is_packed":          packer_result.is_packed,
-            "packer_name":        packer_result.packer_name,
-            "detected_signatures": packer_result.detected_signatures,
-            "detection_methods":  packer_result.detection_methods,
-            "confidence":         packer_result.confidence,
-            "warnings":           packer_result.warnings,
-        }
+            if self._tool_enabled("packer"):
+                analysis["packer"] = {
+                    "is_packed":           packer_result.is_packed,
+                    "packer_name":         packer_result.packer_name,
+                    "detected_signatures": packer_result.detected_signatures,
+                    "detection_methods":   packer_result.detection_methods,
+                    "confidence":          packer_result.confidence,
+                    "warnings":            packer_result.warnings,
+                }
 
-        # Save entropy results in the dedicated section
-        if packer_result.entropy_result:
-            er = packer_result.entropy_result
-            analysis["entropy"] = {
-                "file_entropy":         er.file_entropy,
-                "section_entropies":    er.section_entropies,
-                "high_entropy_sections": er.high_entropy_sections,
-                "max_section_entropy":  er.max_section_entropy,
-                "overall_suspicious":   er.overall_suspicious,
-            }
+            # Save entropy results
+            if self._tool_enabled("entropy") and packer_result.entropy_result:
+                er = packer_result.entropy_result
+                analysis["entropy"] = {
+                    "file_entropy":          er.file_entropy,
+                    "section_entropies":     er.section_entropies,
+                    "high_entropy_sections": er.high_entropy_sections,
+                    "max_section_entropy":   er.max_section_entropy,
+                    "overall_suspicious":    er.overall_suspicious,
+                }
+        else:
+            logger.info("⏭️  [3/5] Packer / entropy skipped by tool selection")
 
-        # ─── Stage 4: UPX handling (if file is packed with UPX) ────────────
+        # ─── Stage 4: UPX handling ────────────────────────────────────────────
         analysis_target = filepath  # May change if unpacking succeeds
 
-        if packer_result.is_packed:
-            logger.warning(
-                "⚠️  Warning: Static analysis may be unreliable due to packing/encryption"
-            )
+        if packer_result and packer_result.is_packed:
+            logger.warning("⚠️  Warning: Static analysis may be unreliable due to packing/encryption")
 
-            # We try unpacking only if the packer is UPX
-            if packer_result.packer_name == "UPX":
+            if self._tool_enabled("upx") and packer_result.packer_name == "UPX":
                 logger.info("📦 [4/5] Attempting UPX unpacking...")
                 upx_result = self.upx_handler.unpack(filepath)
-
                 analysis["upx"] = {
                     "success":       upx_result.success,
                     "upx_available": upx_result.upx_available,
@@ -209,22 +257,17 @@ class FileAnalyzer:
                     "error_message": upx_result.error_message,
                     "skipped":       upx_result.skipped,
                 }
-
                 if upx_result.success:
+                    analysis_target = Path(upx_result.unpacked_path)
                     logger.info("✅ Unpacking succeeded — recalculating hashes...")
-                    
-
-                    # Recalculate hashes for the unpacked file
                     try:
                         new_hashes = get_all_hashes(analysis_target)
-                        analysis["hashes"]["sha256_unpacked"] = new_hashes["sha256"]
-                        analysis["hashes"]["sha1_unpacked"]   = new_hashes["sha1"]
-                        analysis["hashes"]["md5_unpacked"]    = new_hashes["md5"]
-
-                        # Re-query VT for the unpacked file
-                        if not self.skip_vt:
+                        for algo in self._hash_algos:
+                            if algo in new_hashes:
+                                analysis["hashes"][f"{algo}_unpacked"] = new_hashes[algo]
+                        if not self.skip_vt and self._tool_enabled("vt"):
                             logger.info("🌐 Re-querying VT for unpacked file...")
-                            vt2 = self.vt_client.query_hash(new_hashes["sha256"])
+                            vt2 = self.vt_client.query_hash(new_hashes.get("sha256", ""))
                             analysis["virustotal"]["unpacked"] = {
                                 "detection_ratio": vt2.detection_ratio,
                                 "malicious":       vt2.malicious,
@@ -232,51 +275,60 @@ class FileAnalyzer:
                             }
                     except Exception as e:
                         logger.error(f"Failed to recalculate hashes: {e}")
-
                 elif upx_result.skipped:
                     logger.warning(f"⚠️  {upx_result.error_message}")
-            else:
+            elif packer_result.packer_name != "UPX":
                 logger.info(f"⏭️  [4/5] Packer '{packer_result.packer_name}' does not support automatic unpacking")
+            else:
+                logger.info("⏭️  [4/5] UPX unpacking skipped by tool selection")
         else:
             logger.info("⏭️  [4/5] File not packed, skipping UPX stage")
 
-        # ─── Stage 5: Deep static analysis ───────────────────────────────
-        logger.info("🔬 [5/5] Deep static analysis (IAT + Strings + IOCs)...")
-        static_result = self.static_analyzer.analyze(analysis_target)
+        # ─── Stage 5: Deep static analysis ───────────────────────────────────
+        run_static = any(self._tool_enabled(k) for k in ("pe_info", "imports", "exports", "suspicious_apis", "ioc", "strings", "risk_score"))
+        if run_static:
+            logger.info("🔬 [5/5] Deep static analysis (IAT + Strings + IOCs)...")
+            static_result = self.static_analyzer.analyze(analysis_target)
 
-        analysis["pe_info"] = {
-            "is_pe":             static_result.is_pe,
-            "machine_type":      static_result.machine_type,
-            "timestamp":         static_result.timestamp,
-            "entry_point":       static_result.entry_point,
-            "subsystem":         static_result.subsystem,
-            "is_dll":            static_result.is_dll,
-            "imphash":           static_result.imphash,
-            "section_count":     len(static_result.sections),
-            "import_dll_count":  len(static_result.imports),
-            "import_func_count": sum(len(v) for v in static_result.imports.values()),
-            "imports":           {dll: [vars(f) for f in funcs] for dll, funcs in static_result.imports.items()},
-            "exports":           [vars(e) for e in static_result.exports],
-            "sections":          static_result.sections,
-        }
+            if self._tool_enabled("pe_info"):
+                analysis["pe_info"] = {
+                    "is_pe":             static_result.is_pe,
+                    "machine_type":      static_result.machine_type,
+                    "timestamp":         static_result.timestamp,
+                    "entry_point":       static_result.entry_point,
+                    "subsystem":         static_result.subsystem,
+                    "is_dll":            static_result.is_dll,
+                    "imphash":           static_result.imphash,
+                    "section_count":     len(static_result.sections),
+                    "import_dll_count":  len(static_result.imports),
+                    "import_func_count": sum(len(v) for v in static_result.imports.values()),
+                    "sections":          static_result.sections,
+                    # imports/exports added below if enabled
+                    "imports":  ({dll: [vars(f) for f in funcs] for dll, funcs in static_result.imports.items()}
+                                 if self._tool_enabled("imports") else {}),
+                    "exports":  ([vars(e) for e in static_result.exports]
+                                 if self._tool_enabled("exports") else []),
+                }
 
-        analysis["suspicious_apis"] = static_result.suspicious_apis
-        analysis["iocs"]            = static_result.iocs
+            if self._tool_enabled("suspicious_apis"):
+                analysis["suspicious_apis"] = static_result.suspicious_apis
 
-         # 🔥 FIX: safe string extraction (NO crashes even if missing fields)
-        analysis["strings"] = {
-            "total": getattr(static_result, "total_strings", 0),
-            "ascii": getattr(static_result, "ascii_strings", []),
-            "unicode": getattr(static_result, "unicode_strings", []),
-        }
+            if self._tool_enabled("ioc"):
+                analysis["iocs"] = static_result.iocs
 
-        analysis["risk_score_for_IAT"] = getattr(static_result, "risk_score", 0)
-        analysis["risk_level_for_IAT"] = getattr(static_result, "risk_level_for_IAT", "Unknown")
-        
-        analysis["risk_level"] = categorize_risk(static_result, 
-                                                 vt_result, 
-                                                 packer_result
-                                                )
+            if self._tool_enabled("strings"):
+                analysis["strings"] = {
+                    "total":   getattr(static_result, "total_strings", 0),
+                    "ascii":   getattr(static_result, "ascii_strings", []),
+                    "unicode": getattr(static_result, "unicode_strings", []),
+                }
+
+            if self._tool_enabled("risk_score"):
+                analysis["risk_score_for_IAT"] = getattr(static_result, "risk_score", 0)
+                analysis["risk_level_for_IAT"] = getattr(static_result, "risk_level_for_IAT", "Unknown")
+                analysis["risk_level"] = categorize_risk(static_result, vt_result or __import__('core.vt_client', fromlist=['VTResult']).VTResult(), packer_result or type('P', (), {'is_packed': False, 'packer_name': None})())
+        else:
+            logger.info("⏭️  [5/5] Static analysis skipped by tool selection")
 
         # Clean up temporary UPX files
         if analysis["upx"].get("success") and analysis["upx"].get("unpacked_path"):
