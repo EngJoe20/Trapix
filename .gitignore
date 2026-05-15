@@ -1,0 +1,24 @@
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Trapix Logs
+Tools/output/logs/*.log
+Trapix/storage/logs/*.log
+
+# Reports
+*.pdf
+
+# AI Brain & Scratches
+brain/
+AI Agent/
+
+# OS
+.DS_Store
+Thumbs.db
+
+.kilo
