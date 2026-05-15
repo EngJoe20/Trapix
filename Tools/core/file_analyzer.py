@@ -205,6 +205,7 @@ class FileAnalyzer:
                 "threat_label":    vt_result.threat_label,
                 "permalink":       vt_result.permalink,
                 "error":           vt_result.error,
+                "raw_stats":       vt_result.raw_stats,
             }
         else:
             logger.info("⏭️  [2/5] Skipping VirusTotal")
