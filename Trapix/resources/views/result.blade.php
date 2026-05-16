@@ -18,12 +18,71 @@
                 <h1 class="text-3xl font-bold text-heading-1">Analysis <span class="text-green-400 neon-text">Result</span></h1>
                 <p class="text-body text-xs font-mono mt-1">Job ID: <span class="text-emerald-400">{{ $job->id }}</span></p>
             </div>
-            <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3" x-data="{ exportsOpen: false }">
                 <a href="{{ route('analysis.report.export-zip', $job->id) }}" target="_blank"
                    class="border border-green-500/50 hover:bg-green-500/10 text-green-400 font-bold flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                     Export ZIP
                 </a>
+
+                {{-- Reports & Exports Dropdown --}}
+                <div class="relative">
+                    <button @click="exportsOpen = !exportsOpen"
+                            class="border border-slate-500/50 hover:bg-slate-500/10 text-slate-300 font-bold flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Reports &amp; Exports
+                        <svg class="w-3 h-3 transition-transform" :class="exportsOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="exportsOpen" @click.outside="exportsOpen = false" x-transition
+                         class="absolute right-0 mt-2 w-56 rounded-lg border border-box-border bg-[#0d1b2a] shadow-xl shadow-black/50 z-50 overflow-hidden">
+                        <div class="py-1">
+                            <p class="px-3 py-2 text-xs text-body/50 uppercase tracking-widest font-semibold border-b border-box-border/40">Reports</p>
+                            <a href="{{ route('analysis.report', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-green-500/10 hover:text-green-400 transition-colors">
+                                <svg class="w-4 h-4 text-green-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download PDF
+                            </a>
+                            <a href="{{ route('analysis.report.html', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-green-500/10 hover:text-green-400 transition-colors">
+                                <svg class="w-4 h-4 text-blue-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                View HTML Report
+                            </a>
+                            <a href="{{ route('analysis.report.threat-intel', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-orange-500/10 hover:text-orange-400 transition-colors">
+                                <svg class="w-4 h-4 text-orange-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                Threat Intel Report
+                            </a>
+                            <a href="{{ route('analysis.report.dfir', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-purple-500/10 hover:text-purple-400 transition-colors">
+                                <svg class="w-4 h-4 text-purple-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                DFIR Report
+                            </a>
+                            <a href="{{ route('analysis.report.soc', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors">
+                                <svg class="w-4 h-4 text-cyan-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                SOC Report
+                            </a>
+
+                            <p class="px-3 py-2 text-xs text-body/50 uppercase tracking-widest font-semibold border-t border-b border-box-border/40 mt-1">Exports</p>
+                            <a href="{{ route('analysis.report.export-json', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-yellow-500/10 hover:text-yellow-400 transition-colors">
+                                <svg class="w-4 h-4 text-yellow-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                JSON Export
+                            </a>
+                            <a href="{{ route('analysis.report.export-iocs', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                                <svg class="w-4 h-4 text-red-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                IOC CSV Export
+                            </a>
+                            <a href="{{ route('analysis.report.export-stix', $job->id) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-body hover:bg-indigo-500/10 hover:text-indigo-400 transition-colors">
+                                <svg class="w-4 h-4 text-indigo-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                STIX 2.1 Export
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <a href="{{ route('analysis.report', $job->id) }}" target="_blank"
                    class="btn-primary flex items-center gap-2 text-sm px-4 py-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>

@@ -171,7 +171,7 @@ class AnalysisController extends Controller
             'risk_level' => $job->report?->risk_level,
             'has_pdf'    => (bool) $job->report?->pdf_path,
             'pdf_url'    => $job->report?->pdf_path
-                            ? route('api.analysis.report', $job->id)
+                            ? route('api.analysis.report.download', $job->id)
                             : null,
             'files'      => $job->files->map(fn($f) => [
                 'name' => $f->original_name,

@@ -499,9 +499,19 @@ Optional: `report.pdf` in the same directory.
 | `POST` | `/api/analysis` | Public | Upload files, create analysis job |
 | `GET` | `/api/analysis/{id}` | Public | Poll job status |
 | `GET` | `/api/analysis/{id}/result` | Public | Get full JSON result |
-| `GET` | `/api/analysis/{id}/report` | Public | Download PDF report |
+| `GET` | `/api/analysis/{id}/export-json` | Public | Export structured JSON |
+| `GET` | `/api/analysis/{id}/export-stix` | Public | Export STIX 2.1 intelligence |
+| `GET` | `/api/analysis/{id}/export-iocs` | Public | Export IOCs as CSV |
 | `GET` | `/api/dashboard/quota` | Auth | Current user quota info |
 | `GET` | `/dashboard/history` | Auth | Paginated analysis history |
+
+### Web Interface & Reporting
+The web interface provides multiple dynamic views and downloadable formats:
+- `/analysis/{id}/report` - Download Professional PDF Report
+- `/analysis/{id}/report-html` - View interactive HTML Report
+- `/analysis/{id}/report-soc` - View specialized SOC Alert format
+- `/analysis/{id}/report-dfir` - View specialized DFIR Timeline format
+- `/analysis/{id}/report-threat-intel` - View Threat Intel Summary format
 
 ### POST /api/analysis
 

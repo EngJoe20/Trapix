@@ -53,6 +53,32 @@ Route::get('/analysis/{jobId}/report', [\App\Http\Controllers\ReportController::
 Route::get('/analysis/{jobId}/export-zip', [\App\Http\Controllers\ReportController::class, 'exportZip'])
     ->name('analysis.report.export-zip');
 
+// ── Enterprise report formats (web / HTML views) ──────────────────────────────
+Route::get('/analysis/{jobId}/report-html', [\App\Http\Controllers\ReportController::class, 'view'])
+    ->name('analysis.report.html');
+
+Route::get('/analysis/{jobId}/report-preview', [\App\Http\Controllers\ReportController::class, 'preview'])
+    ->name('analysis.report.preview');
+
+Route::get('/analysis/{jobId}/report-threat-intel', [\App\Http\Controllers\ReportController::class, 'threatIntel'])
+    ->name('analysis.report.threat-intel');
+
+Route::get('/analysis/{jobId}/report-dfir', [\App\Http\Controllers\ReportController::class, 'dfir'])
+    ->name('analysis.report.dfir');
+
+Route::get('/analysis/{jobId}/report-soc', [\App\Http\Controllers\ReportController::class, 'soc'])
+    ->name('analysis.report.soc');
+
+// ── Export endpoints ──────────────────────────────────────────────────────────
+Route::get('/analysis/{jobId}/export-json', [\App\Http\Controllers\ReportController::class, 'exportJson'])
+    ->name('analysis.report.export-json');
+
+Route::get('/analysis/{jobId}/export-stix', [\App\Http\Controllers\ReportController::class, 'exportStix'])
+    ->name('analysis.report.export-stix');
+
+Route::get('/analysis/{jobId}/export-iocs', [\App\Http\Controllers\ReportController::class, 'exportIocs'])
+    ->name('analysis.report.export-iocs');
+
 // ── Auth routes (Breeze) ──────────────────────────────────────────────────────
 require __DIR__ . '/auth.php';
 
@@ -75,7 +101,7 @@ Route::prefix('api')->name('api.')->group(function () {
         ->name('analysis.result');
 
     Route::get('/analysis/{jobId}/report', [ReportController::class, 'download'])
-        ->name('analysis.report');
+        ->name('analysis.report.download');
 
     Route::post('/analysis/{jobId}/collaboration', [\App\Http\Controllers\JobCollaborationController::class, 'update'])
         ->name('analysis.collaboration');

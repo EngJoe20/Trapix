@@ -1,0 +1,629 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TRAPIX ENTERPRISE MALWARE ANALYSIS REPORT - PROFESSIONAL CYBERSECURITY STYLING
+   Dark theme, enterprise-ready, optimized for PDF rendering via dompdf
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE STYLES & TYPOGRAPHY
+   ───────────────────────────────────────────────────────────────────────────── */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    background: #0f1419;
+    color: #e2e8f0;
+    font-size: 11px;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Typography hierarchy */
+h1 { font-size: 28px; font-weight: 700; color: #f8fafc; margin: 20px 0 10px; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; }
+h2 { font-size: 18px; font-weight: 600; color: #cbd5e0; margin: 18px 0 8px; border-bottom: 2px solid #1e293b; padding-bottom: 6px; }
+h3 { font-size: 14px; font-weight: 600; color: #94a3b8; margin: 12px 0 6px; }
+h4 { font-size: 12px; font-weight: 600; color: #cbd5e0; margin: 8px 0 4px; }
+
+p { margin: 6px 0; }
+strong { color: #f1f5f9; font-weight: 600; }
+em { color: #94a3b8; font-style: italic; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BADGE SYSTEM - Risk Severity Indicators
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-critical {
+    background: #dc2626;
+    color: #fff;
+}
+
+.badge-high {
+    background: #ea580c;
+    color: #fff;
+}
+
+.badge-medium {
+    background: #ca8a04;
+    color: #fff;
+}
+
+.badge-low {
+    background: #16a34a;
+    color: #fff;
+}
+
+.badge-clean {
+    background: #0891b2;
+    color: #fff;
+}
+
+.badge-info {
+    background: #3b82f6;
+    color: #fff;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SEVERITY COLOR SCHEME
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.severity-critical { color: #dc2626; }
+.severity-high { color: #ea580c; }
+.severity-medium { color: #ca8a04; }
+.severity-low { color: #16a34a; }
+
+.text-critical { color: #ef5350; }
+.text-high { color: #ff9800; }
+.text-medium { color: #fbc02d; }
+.text-low { color: #4caf50; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ALERT & INFO BOXES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.alert-box {
+    padding: 12px 14px;
+    margin: 12px 0;
+    border-left: 4px solid;
+    border-radius: 2px;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.alert-critical {
+    border-left-color: #dc2626;
+    background-color: rgba(220, 38, 38, 0.1);
+}
+
+.alert-high {
+    border-left-color: #ea580c;
+    background-color: rgba(234, 88, 12, 0.1);
+}
+
+.alert-medium {
+    border-left-color: #ca8a04;
+    background-color: rgba(202, 138, 4, 0.1);
+}
+
+.alert-low {
+    border-left-color: #16a34a;
+    background-color: rgba(22, 163, 74, 0.1);
+}
+
+.info-box {
+    padding: 12px 14px;
+    margin: 12px 0;
+    border-left: 4px solid #3b82f6;
+    border-radius: 2px;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TABLES - Professional Data Display
+   ───────────────────────────────────────────────────────────────────────────── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+}
+
+th {
+    background-color: #0f172a;
+    color: #f1f5f9;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #3b82f6;
+}
+
+td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #334155;
+    color: #cbd5e0;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(15, 23, 42, 0.5);
+}
+
+/* Table variations */
+.table-compact td,
+.table-compact th {
+    padding: 6px 8px;
+    font-size: 10px;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HEADER & COVER PAGE STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.cover-page {
+    page-break-after: always;
+    padding: 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #0f1419 0%, #1e293b 100%);
+    min-height: 900px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cover-page h1 {
+    font-size: 42px;
+    margin: 20px 0;
+    color: #f8fafc;
+    border: none;
+    padding: 0;
+}
+
+.cover-page .logo {
+    font-size: 32px;
+    color: #3b82f6;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.cover-page .subtitle {
+    font-size: 14px;
+    color: #94a3b8;
+    margin: 30px 0;
+}
+
+.cover-page .metadata {
+    margin-top: 60px;
+    text-align: left;
+    background-color: rgba(59, 130, 246, 0.1);
+    padding: 20px;
+    border-left: 4px solid #3b82f6;
+}
+
+.cover-page .metadata dt {
+    font-weight: 600;
+    color: #cbd5e0;
+    display: inline-block;
+    width: 120px;
+}
+
+.cover-page .metadata dd {
+    display: inline;
+    color: #94a3b8;
+    margin-left: 0;
+    margin-bottom: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RISK SCORE DISPLAY
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.risk-score-gauge {
+    display: inline-block;
+    text-align: center;
+    margin: 12px 0;
+}
+
+.risk-score-value {
+    font-size: 32px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.risk-score-gauge.critical .risk-score-value { color: #dc2626; }
+.risk-score-gauge.high .risk-score-value { color: #ea580c; }
+.risk-score-gauge.medium .risk-score-value { color: #ca8a04; }
+.risk-score-gauge.low .risk-score-value { color: #16a34a; }
+.risk-score-gauge.clean .risk-score-value { color: #0891b2; }
+
+.risk-score-label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DETECTION RATIO BAR
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.detection-ratio-container {
+    margin: 12px 0;
+}
+
+.detection-ratio-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.detection-ratio-bar {
+    height: 8px;
+    background-color: #334155;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.detection-ratio-fill {
+    height: 100%;
+    background: linear-gradient(to right, #16a34a 0%, #ca8a04 50%, #dc2626 100%);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SUMMARY BOXES & CARD LAYOUT
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.summary-box {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 12px 0;
+}
+
+@media print {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.summary-item {
+    background-color: rgba(30, 41, 59, 0.8);
+    border: 1px solid #334155;
+    padding: 10px;
+    border-radius: 3px;
+}
+
+.summary-item-label {
+    font-size: 9px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.summary-item-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION STYLING
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.section {
+    page-break-inside: avoid;
+    margin: 16px 0;
+    padding: 12px;
+}
+
+.section-header {
+    background: linear-gradient(to right, #0f172a, #1e293b);
+    padding: 10px 12px;
+    border-left: 4px solid #3b82f6;
+    margin: -12px -12px 12px -12px;
+    border-bottom: 1px solid #334155;
+}
+
+.section-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   EXECUTIVE SUMMARY STYLING
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.executive-summary {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
+    border: 2px solid #3b82f6;
+    border-radius: 4px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.executive-summary-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 10px;
+}
+
+.executive-summary-content {
+    font-size: 11px;
+    line-height: 1.6;
+    color: #cbd5e0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   API & IOC LISTING STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.api-item {
+    background-color: rgba(15, 23, 42, 0.6);
+    border-left: 3px solid;
+    padding: 8px 10px;
+    margin: 6px 0;
+    border-radius: 2px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.api-item.critical { border-left-color: #dc2626; }
+.api-item.high { border-left-color: #ea580c; }
+.api-item.medium { border-left-color: #ca8a04; }
+.api-item.low { border-left-color: #16a34a; }
+
+.ioc-item {
+    background-color: rgba(15, 23, 42, 0.5);
+    border: 1px solid #334155;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 2px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 9px;
+    word-break: break-all;
+}
+
+.ioc-item-type {
+    display: inline-block;
+    background-color: #334155;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 8px;
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.ioc-item-value {
+    color: #cbd5e0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PE SECTION STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.pe-section {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 3px;
+    padding: 10px;
+    margin: 8px 0;
+}
+
+.pe-section-title {
+    font-weight: 600;
+    color: #cbd5e0;
+    font-size: 10px;
+    margin-bottom: 6px;
+}
+
+.pe-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #334155;
+    font-size: 10px;
+}
+
+.pe-detail:last-child {
+    border-bottom: none;
+}
+
+.pe-label {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.pe-value {
+    color: #cbd5e0;
+    font-family: 'Monaco', 'Courier New', monospace;
+    text-align: right;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MITRE ATT&CK FRAMEWORK DISPLAY
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.mitre-technique {
+    background-color: rgba(59, 130, 246, 0.05);
+    border: 1px solid #334155;
+    border-left: 3px solid #3b82f6;
+    padding: 8px;
+    margin: 6px 0;
+    border-radius: 2px;
+}
+
+.mitre-technique-tactic {
+    font-size: 9px;
+    color: #3b82f6;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mitre-technique-name {
+    font-size: 11px;
+    color: #cbd5e0;
+    font-weight: 600;
+    margin: 4px 0;
+}
+
+.mitre-technique-evidence {
+    font-size: 10px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FOOTER & PAGE BREAKS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.page-break {
+    page-break-after: always;
+}
+
+footer {
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #334155;
+    text-align: center;
+    font-size: 9px;
+    color: #64748b;
+}
+
+footer .footer-brand {
+    font-weight: 600;
+    color: #3b82f6;
+}
+
+.footer-disclaimer {
+    font-size: 8px;
+    color: #64748b;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PRINT OPTIMIZATION
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media print {
+    html, body {
+        background: white;
+        color: #333;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    a {
+        color: #0066cc;
+        text-decoration: none;
+    }
+
+    h1, h2, h3, h4 {
+        page-break-after: avoid;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CODE & MONOSPACE STYLING
+   ───────────────────────────────────────────────────────────────────────────── */
+
+code, pre {
+    font-family: 'Monaco', 'Courier New', monospace;
+    background-color: #0f172a;
+    color: #cbd5e0;
+    border: 1px solid #334155;
+    border-radius: 3px;
+    font-size: 9px;
+}
+
+code {
+    padding: 2px 4px;
+    display: inline-block;
+}
+
+pre {
+    padding: 8px 10px;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
