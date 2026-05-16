@@ -2,7 +2,8 @@ import sys
 import os
 
 # Add Tools to path
-sys.path.append(os.path.abspath('e:/Trapix/Tools'))
+TOOLS_PATH = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'Tools'))
+sys.path.append(TOOLS_PATH)
 
 from core.report_generator import ReportGenerator
 

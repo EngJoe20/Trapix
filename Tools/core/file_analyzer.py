@@ -207,6 +207,13 @@ class FileAnalyzer:
                 "error":           vt_result.error,
                 "raw_stats":       vt_result.raw_stats,
             }
+            # Log VT query result status
+            if vt_result.error:
+                logger.warning(f"⚠️  VirusTotal query failed: {vt_result.error}")
+            elif vt_result.queried and vt_result.found:
+                logger.info(f"✅ VirusTotal: {vt_result.detection_ratio} ({vt_result.threat_label or 'unclassified'})")
+            elif vt_result.queried and not vt_result.found:
+                logger.info("ℹ️  File not found in VirusTotal database")
         else:
             logger.info("⏭️  [2/5] Skipping VirusTotal")
             from core.vt_client import VTResult
@@ -371,6 +378,10 @@ class FileAnalyzer:
 
         logger.info(f"📂 Directory: {dirpath} | {len(files)} files to analyze")
 
+        if len(files) == 0:
+            logger.warning("⚠️  No analyzable files found in directory (check file size limits)")
+            return []
+
         results = []
 
         # Use ThreadPoolExecutor instead of ProcessPoolExecutor
@@ -382,15 +393,20 @@ class FileAnalyzer:
                 for f in files
             }
 
+            completed = 0
+            failed = 0
             for future in as_completed(future_to_file):
                 filepath = future_to_file[future]
                 try:
                     result = future.result()
                     results.append(result)
+                    completed += 1
+                    logger.info(f"📊 Progress: {completed}/{len(files)} files analyzed | {filepath.name}")
                 except Exception as e:
+                    failed += 1
                     logger.error(f"❌ Error analyzing {filepath.name}: {e}")
 
-        logger.info(f"✅ Completed analysis {len(results)}/{len(files)} files")
+        logger.info(f"✅ Completed: {completed}/{len(files)} files analyzed, {failed} failed")
         return results
 
     def _validate_file(self, filepath: Path, analysis: dict) -> bool:

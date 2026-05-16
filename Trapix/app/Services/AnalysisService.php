@@ -146,9 +146,11 @@ class AnalysisService
                 'analysis_job_id' => $job->id,
                 'original_name'   => basename($filename),
                 'stored_name'     => $storedName,
+                'disk'            => 'local',
                 'path'            => $destPath,
-                'size'            => strlen($content),
+                'size_bytes'      => strlen($content),
                 'mime_type'       => null, // Will be determined by Python
+                'sha256'          => hash('sha256', $content),
             ]);
 
             $extractedCount++;

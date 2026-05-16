@@ -170,16 +170,20 @@ class VirusTotalClient:
                 result.error = f"Unexpected response from VT API: HTTP {response.status_code}"
                 logger.error(f"❌ {result.error}")
 
-        except requests.exceptions.Timeout:
-            result.error = "Connection timeout to VirusTotal"
+        except requests.exceptions.Timeout as e:
+            result.error = f"Connection timeout to VirusTotal (30s timeout): {str(e)}"
             logger.error(f"❌ {result.error}")
 
-        except requests.exceptions.ConnectionError:
-            result.error = "Failed to connect to VirusTotal — check your internet connection"
+        except requests.exceptions.ConnectionError as e:
+            result.error = f"Failed to connect to VirusTotal — check your internet connection: {str(e)}"
+            logger.error(f"❌ {result.error}")
+
+        except requests.exceptions.RequestException as e:
+            result.error = f"Request error: {str(e)}"
             logger.error(f"❌ {result.error}")
 
         except Exception as e:
-            result.error = f"Unexpected error: {e}"
+            result.error = f"Unexpected error: {str(e)}"
             logger.error(f"❌ {result.error}")
 
         return result

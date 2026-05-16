@@ -538,7 +538,12 @@ class ReportGenerator:
             pdf.set_text_color(0)
             pdf.set_font('helvetica', '', 9)
             for api, reason in sus_apis.items():
-                pdf.multi_cell(0, 6, f'- {self._safe_str(api)}: {self._safe_str(reason)}', 0, 'L')
+                page_width = pdf.w - pdf.l_margin - pdf.r_margin
+                pdf.multi_cell(page_width,
+                                6,
+                                f'- {self._safe_str(api)}: {self._safe_str(reason)}',
+                                0,
+                                'L')
             pdf.ln(10)
 
         # IOCs
