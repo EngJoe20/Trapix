@@ -90,6 +90,12 @@
             >
                 Eng. Mina
             </a>
+            <a
+                href="{{ route('login.samar') }}"
+                class="auth-ghost-btn flex-1 flex items-center justify-center text-center"
+            >
+                Dr. Samar
+            </a>
         </div>
     </div>
  

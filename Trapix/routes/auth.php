@@ -25,6 +25,9 @@ Route::middleware('guest')->group(function () {
     Route::get('login/mina', [AuthenticatedSessionController::class, 'loginAsMina'])
         ->name('login.mina');
 
+    Route::get('login/samar', [AuthenticatedSessionController::class, 'loginAsSamar'])
+        ->name('login.samar');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 

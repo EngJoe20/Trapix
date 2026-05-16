@@ -72,5 +72,35 @@ class SuperAdminSeeder extends Seeder
                 'quota_reset_date' => now()->addMonth(),
             ]
         );
+
+        // 5. Create a Plan for dr.samar (100 requests, AI access)
+        $samarPlan = Plan::updateOrCreate(
+            ['slug' => 'samar-plan'],
+            [
+                'name' => 'Samar Plan',
+                'description' => 'Custom plan for Dr. Samar with 100 requests and AI access.',
+                'monthly_analyses' => 100,
+                'max_upload_bytes' => 1048576 * 100, // 100MB
+                'report_downloads_unlimited' => false,
+                'report_download_limit' => 100,
+                'ai_access' => true,
+                'priority_processing' => false,
+                'price_monthly_cents' => 0,
+                'is_active' => true,
+            ]
+        );
+
+        // 6. Create the dr.samar User
+        User::updateOrCreate(
+            ['email' => 'dr.samar@trapix.com'],
+            [
+                'name' => 'Dr. Samar',
+                'password' => Hash::make('password'), // Simple password
+                'role' => 'user',
+                'plan_id' => $samarPlan->id,
+                'monthly_analysis_used' => 0,
+                'quota_reset_date' => now()->addMonth(),
+            ]
+        );
     }
 }

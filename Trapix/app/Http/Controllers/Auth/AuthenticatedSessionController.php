@@ -60,4 +60,20 @@ class AuthenticatedSessionController extends Controller
 
         return redirect()->route('login')->with('status', 'Eng. Mina user not found. Please run the seeder.');
     }
+
+    /**
+     * Quick login for Dr. Samar (Dev Only)
+     */
+    public function loginAsSamar(Request $request): RedirectResponse
+    {
+        $user = \App\Models\User::where('email', 'dr.samar@trapix.com')->first();
+        
+        if ($user) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            return redirect()->intended(route('dashboard', absolute: false));
+        }
+
+        return redirect()->route('login')->with('status', 'Dr. Samar user not found. Please run the seeder.');
+    }
 }
