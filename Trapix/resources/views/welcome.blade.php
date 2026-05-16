@@ -343,7 +343,7 @@
                 <!-- Step 1 -->
                 <div class="glass-card p-8 text-center relative fade-in-up stagger-delay-1 group">
                     <div
-                        class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-green-500/40">
+                        class="mt-6 absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-green-500/40">
                         1
                     </div>
                     <div class="pt-6">
@@ -365,7 +365,7 @@
                 <!-- Step 2 -->
                 <div class="glass-card p-8 text-center relative fade-in-up stagger-delay-2 group">
                     <div
-                        class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-emerald-500/40">
+                        class="mt-6 absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-emerald-500/40">
                         2
                     </div>
                     <div class="pt-6">
@@ -386,7 +386,7 @@
                 <!-- Step 3 -->
                 <div class="glass-card p-8 text-center relative fade-in-up stagger-delay-3 group">
                     <div
-                        class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-purple-500/40">
+                        class="mt-6 absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold border-2 border-bg shadow-lg shadow-purple-500/40">
                         3
                     </div>
                     <div class="pt-6">
@@ -473,7 +473,7 @@
                 <!-- Pro Plan -->
                 <div
                     class="glass-card p-8 relative flex flex-col fade-in-up stagger-delay-2 border-2 border-green-500 shadow-[0_0_30px_rgba(34,211,238,0.2)] transform md:-translate-y-4">
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2">
                         <span class="px-4 py-1 text-xs font-bold rounded-full bg-green-500 text-white shadow-lg">MOST
                             POPULAR</span>
                     </div>

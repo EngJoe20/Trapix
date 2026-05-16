@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/ai-integrations/save', [\App\Http\Controllers\AiIntegrationController::class, 'save'])->name('settings.ai-integrations.save');
     Route::post('/settings/ai-integrations/test', [\App\Http\Controllers\AiIntegrationController::class, 'test'])->name('settings.ai-integrations.test');
     Route::delete('/settings/ai-integrations/delete', [\App\Http\Controllers\AiIntegrationController::class, 'destroy'])->name('settings.ai-integrations.delete');
+    Route::get('/settings/ai-integrations/models', [\App\Http\Controllers\AiIntegrationController::class, 'models'])->name('settings.ai-integrations.models');
 });
 
 // ── Analysis result page ──────────────────────────────────────────────────────
