@@ -67,7 +67,7 @@
                 <!-- Pro Plan -->
                 <div
                     class="glass-card p-8 relative flex flex-col fade-in-up stagger-delay-2 border-2 border-green-500 shadow-[0_0_30px_rgba(34,211,238,0.2)] transform md:-translate-y-4">
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 ">
                         <span class="px-4 py-1 text-xs font-bold rounded-full bg-green-500 text-white shadow-lg">MOST
                             POPULAR</span>
                     </div>
